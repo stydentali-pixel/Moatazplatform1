@@ -1,0 +1,165 @@
+// Prisma schema for Moataz Platform
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  AUTHOR
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
+enum PostType {
+  ARTICLE
+  STORY
+  LINK
+  IMAGE
+  VIDEO
+  QUOTE
+}
+
+enum IdeaStatus {
+  SUGGESTED
+  DRAFTED
+  APPROVED
+  REJECTED
+  SCHEDULED
+  PUBLISHED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         UserRole  @default(AUTHOR)
+  bio          String?
+  avatar       String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  posts        Post[]
+  ideas        ArticleIdea[]
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  posts       Post[]
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  name  String
+  slug  String    @unique
+  posts PostTag[]
+}
+
+model Post {
+  id              String     @id @default(cuid())
+  title           String
+  slug            String     @unique
+  excerpt         String?
+  content         String     @default("")
+  coverImage      String?
+  type            PostType   @default(ARTICLE)
+  status          PostStatus @default(DRAFT)
+  featured        Boolean    @default(false)
+  views           Int        @default(0)
+  readingTime     Int        @default(1)
+  seoTitle        String?
+  seoDescription  String?
+  canonicalUrl    String?
+  publishedAt     DateTime?
+  scheduledAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  authorId        String
+  author          User       @relation(fields: [authorId], references: [id])
+  categoryId      String?
+  category        Category?  @relation(fields: [categoryId], references: [id])
+  tags            PostTag[]
+
+  @@index([status, publishedAt])
+  @@index([type])
+  @@index([featured])
+}
+
+model PostTag {
+  postId String
+  tagId  String
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  @@id([postId, tagId])
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  url       String
+  filename  String
+  mimeType  String
+  size      Int
+  altText   String?
+  createdAt DateTime @default(now())
+}
+
+model Page {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   @default("")
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
+
+model ArticleIdea {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  notes       String?
+  status      IdeaStatus @default(SUGGESTED)
+  source      String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  authorId    String?
+  author      User?      @relation(fields: [authorId], references: [id])
+}
+
+model AutomationLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String?
+  entityId  String?
+  payload   String?
+  status    String   @default("success")
+  message   String?
+  createdAt DateTime @default(now())
+}
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}

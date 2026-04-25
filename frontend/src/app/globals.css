@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #fcfaf5;
+    --surface: #f8f3e6;
+    --ink: #1a1410;
+    --muted: #6c5644;
+    --gold: #a26b1c;
+    --gold-deep: #834f1a;
+    --line: rgba(26, 20, 16, 0.08);
+  }
+  html, body { background: var(--bg); color: var(--ink); }
+  body {
+    font-family: var(--font-tajawal), var(--font-cairo), system-ui, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    direction: rtl;
+  }
+  ::selection { background: rgba(162, 107, 28, 0.25); color: var(--ink); }
+  h1, h2, h3, h4 { font-family: var(--font-cairo), system-ui, sans-serif; letter-spacing: -0.01em; }
+  h1 { font-weight: 800; }
+  a { color: inherit; text-decoration: none; }
+}
+
+@layer components {
+  .container-px { @apply px-5 sm:px-8 lg:px-12; }
+  .gold-rule {
+    background-image: linear-gradient(to left, transparent, var(--gold) 30%, var(--gold) 70%, transparent);
+    height: 1px;
+  }
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gold-700 text-cream-50 font-medium transition-all duration-300 hover:bg-gold-800 hover:shadow-lg hover:-translate-y-0.5;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full border border-ink-900/20 text-ink-900 transition-all duration-300 hover:border-gold-700 hover:text-gold-700;
+  }
+  .chip {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border border-ink-900/10 bg-cream-100 text-ink-700 transition-colors hover:border-gold-400 hover:text-gold-700;
+  }
+  .chip-active {
+    @apply bg-gold-700 text-cream-50 border-gold-700;
+  }
+  .card {
+    @apply bg-cream-50 border border-ink-900/5 rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-xl hover:-translate-y-1;
+  }
+  .heading-sec {
+    @apply text-3xl md:text-4xl font-bold text-ink-900 relative inline-block;
+  }
+  .heading-sec::after {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    right: 0;
+    width: 50%;
+    height: 3px;
+    background: linear-gradient(to left, var(--gold), transparent);
+  }
+  .prose-rtl {
+    line-height: 2;
+    font-size: 1.125rem;
+  }
+  .prose-rtl h2 { @apply text-2xl md:text-3xl font-bold text-ink-900 mt-10 mb-4; }
+  .prose-rtl h3 { @apply text-xl md:text-2xl font-bold text-ink-800 mt-8 mb-3; }
+  .prose-rtl p { @apply text-ink-700 my-5; }
+  .prose-rtl ul { @apply list-disc pr-6 my-4 space-y-2 text-ink-700; }
+  .prose-rtl ol { @apply list-decimal pr-6 my-4 space-y-2 text-ink-700; }
+  .prose-rtl blockquote {
+    @apply border-r-4 border-gold-500 pr-5 my-6 text-ink-800 italic bg-cream-100 py-4 rounded-l-2xl;
+  }
+  .prose-rtl a { @apply text-gold-700 underline underline-offset-4 decoration-gold-300 hover:decoration-gold-700; }
+  .prose-rtl img { @apply rounded-2xl my-6 w-full; }
+  .prose-rtl code { @apply bg-cream-100 text-gold-800 px-2 py-0.5 rounded text-sm; }
+  .prose-rtl pre { @apply bg-ink-900 text-cream-50 p-5 rounded-2xl overflow-x-auto my-6 text-sm; }
+
+  .grain::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.4  0 0 0 0 0.3  0 0 0 0 0.1  0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.6;
+  }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.7s ease-out both; }
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-deep); }
