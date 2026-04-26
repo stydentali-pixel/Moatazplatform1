@@ -1,22 +1,9 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import NewsletterForm from "./NewsletterForm";
-
-async function getSettings(): Promise<Record<string, string>> {
-  try {
-    const h = headers();
-    const host = h.get("host");
-    const proto = h.get("x-forwarded-proto") || "http";
-    const res = await fetch(`${proto}://${host}/api/public/settings`, { cache: "no-store" });
-    const json = await res.json();
-    return json?.data || {};
-  } catch {
-    return {};
-  }
-}
+import { getSiteSettings } from "@/lib/settings";
 
 export default async function SiteFooter() {
-  const s = await getSettings();
+  const s = await getSiteSettings();
   const year = new Date().getFullYear();
   return (
     <footer className="mt-24 bg-ink-900 text-cream-100 relative overflow-hidden">
@@ -66,5 +53,3 @@ export default async function SiteFooter() {
     </footer>
   );
 }
-
-// (newsletter form moved to client component)

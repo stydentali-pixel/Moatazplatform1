@@ -16,6 +16,16 @@
       "static/chunks/main-app.js",
       "static/chunks/app/not-found.js"
     ],
+    "/posts/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/posts/page.js"
+    ],
+    "/search/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/search/page.js"
+    ],
     "/admin/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -31,25 +41,45 @@
       "static/chunks/main-app.js",
       "static/chunks/app/admin/(authed)/layout.js"
     ],
-    "/posts/page": [
+    "/admin/(authed)/posts/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/posts/page.js"
+      "static/chunks/app/admin/(authed)/posts/page.js"
     ],
-    "/posts/[slug]/page": [
+    "/admin/(authed)/categories/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/posts/[slug]/page.js"
+      "static/chunks/app/admin/(authed)/categories/page.js"
     ],
-    "/categories/page": [
+    "/admin/(authed)/tags/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/categories/page.js"
+      "static/chunks/app/admin/(authed)/tags/page.js"
     ],
-    "/tags/page": [
+    "/admin/(authed)/ideas/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/tags/page.js"
+      "static/chunks/app/admin/(authed)/ideas/page.js"
+    ],
+    "/admin/(authed)/settings/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/(authed)/settings/page.js"
+    ],
+    "/admin/(authed)/posts/new/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/(authed)/posts/new/page.js"
+    ],
+    "/admin/(authed)/posts/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/(authed)/posts/[id]/page.js"
+    ],
+    "/admin/(authed)/media/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/(authed)/media/page.js"
     ]
   }
 }

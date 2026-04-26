@@ -1,21 +1,8 @@
 import Link from "next/link";
-import { headers } from "next/headers";
-
-async function getSettings(): Promise<Record<string, string>> {
-  try {
-    const h = headers();
-    const host = h.get("host");
-    const proto = h.get("x-forwarded-proto") || "http";
-    const res = await fetch(`${proto}://${host}/api/public/settings`, { cache: "no-store" });
-    const json = await res.json();
-    return json?.data || {};
-  } catch {
-    return {};
-  }
-}
+import { getSiteSettings } from "@/lib/settings";
 
 export default async function SiteHeader() {
-  const s = await getSettings();
+  const s = await getSiteSettings();
   const siteName = s.siteName || "معتز العلقمي";
   return (
     <header className="sticky top-0 z-30 backdrop-blur-md bg-cream-50/85 border-b border-ink-900/5">

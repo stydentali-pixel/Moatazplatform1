@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function AdminLogin() {
+function LoginForm() {
   const router = useRouter();
   const sp = useSearchParams();
   const [email, setEmail] = useState("admin@site.com");
@@ -38,6 +38,52 @@ export default function AdminLogin() {
   }
 
   return (
+    <form onSubmit={onSubmit} className="w-full max-w-sm" data-testid="admin-login-form">
+      <div className="text-gold-700 text-sm tracking-widest mb-2">دخول</div>
+      <h1 className="font-cairo text-3xl font-extrabold text-ink-900 mb-8">تسجيل الدخول</h1>
+
+      <label className="block mb-5">
+        <span className="block text-sm text-ink-700 mb-2">البريد الإلكتروني</span>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-3 text-ink-900 focus:outline-none focus:border-gold-500"
+          data-testid="login-email-input"
+        />
+      </label>
+      <label className="block mb-6">
+        <span className="block text-sm text-ink-700 mb-2">كلمة المرور</span>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-3 text-ink-900 focus:outline-none focus:border-gold-500"
+          data-testid="login-password-input"
+        />
+      </label>
+
+      {error ? (
+        <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3" data-testid="login-error">
+          {error}
+        </div>
+      ) : null}
+
+      <button type="submit" disabled={loading} className="btn-gold w-full disabled:opacity-60" data-testid="login-submit-btn">
+        {loading ? "..." : "دخول"}
+      </button>
+
+      <p className="text-xs text-ink-500 mt-6 text-center">
+        للمسؤول الافتراضي: admin@site.com / 123456
+      </p>
+    </form>
+  );
+}
+
+export default function AdminLogin() {
+  return (
     <main className="min-h-screen grid md:grid-cols-2">
       <div className="bg-ink-900 text-cream-50 p-10 md:p-16 flex flex-col justify-between relative overflow-hidden">
         <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-gold-700/30 blur-3xl pointer-events-none" />
@@ -57,47 +103,9 @@ export default function AdminLogin() {
       </div>
 
       <div className="flex items-center justify-center p-10">
-        <form onSubmit={onSubmit} className="w-full max-w-sm" data-testid="admin-login-form">
-          <div className="text-gold-700 text-sm tracking-widest mb-2">دخول</div>
-          <h1 className="font-cairo text-3xl font-extrabold text-ink-900 mb-8">تسجيل الدخول</h1>
-
-          <label className="block mb-5">
-            <span className="block text-sm text-ink-700 mb-2">البريد الإلكتروني</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-3 text-ink-900 focus:outline-none focus:border-gold-500"
-              data-testid="login-email-input"
-            />
-          </label>
-          <label className="block mb-6">
-            <span className="block text-sm text-ink-700 mb-2">كلمة المرور</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-3 text-ink-900 focus:outline-none focus:border-gold-500"
-              data-testid="login-password-input"
-            />
-          </label>
-
-          {error ? (
-            <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3" data-testid="login-error">
-              {error}
-            </div>
-          ) : null}
-
-          <button type="submit" disabled={loading} className="btn-gold w-full disabled:opacity-60" data-testid="login-submit-btn">
-            {loading ? "..." : "دخول"}
-          </button>
-
-          <p className="text-xs text-ink-500 mt-6 text-center">
-            للمسؤول الافتراضي: admin@site.com / 123456
-          </p>
-        </form>
+        <Suspense fallback={<div className="text-ink-500">...</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </main>
   );

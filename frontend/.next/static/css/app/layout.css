@@ -1204,11 +1204,11 @@ video {
 .me-3 {
   margin-inline-end: 0.75rem;
 }
-.me-72 {
-  margin-inline-end: 18rem;
-}
 .ms-2 {
   margin-inline-start: 0.5rem;
+}
+.ms-72 {
+  margin-inline-start: 18rem;
 }
 .ms-auto {
   margin-inline-start: auto;
@@ -1248,9 +1248,6 @@ video {
 }
 .mt-8 {
   margin-top: 2rem;
-}
-.ms-72 {
-  margin-inline-start: 18rem;
 }
 .line-clamp-1 {
   overflow: hidden;

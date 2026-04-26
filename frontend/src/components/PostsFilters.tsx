@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -13,7 +13,7 @@ const TYPES = [
   { v: "QUOTE", label: "اقتباسات" },
 ];
 
-export default function PostsFilters() {
+function FiltersInner() {
   const router = useRouter();
   const sp = useSearchParams();
   const [type, setType] = useState(sp.get("type") || "");
@@ -52,5 +52,13 @@ export default function PostsFilters() {
         </select>
       </div>
     </div>
+  );
+}
+
+export default function PostsFilters() {
+  return (
+    <Suspense fallback={null}>
+      <FiltersInner />
+    </Suspense>
   );
 }
