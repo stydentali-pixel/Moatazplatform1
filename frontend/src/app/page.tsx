@@ -3,6 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import PostCard from "@/components/PostCard";
 import NewsletterForm from "@/components/NewsletterForm";
+import HomeCategories from "@/components/HomeCategories";
 import { prisma } from "@/lib/prisma";
 import { postCardSelect, sanitizePostCards } from "@/lib/content";
 import { getSiteSettings } from "@/lib/settings";
@@ -14,25 +15,14 @@ export const dynamic = "force-static";
 type HomeData = {
   featured: any[];
   latest: any[];
-  categories: Array<{ id: string; name: string; slug: string; _count: { posts: number } }>;
   settings: Record<string, string>;
   error?: string;
 };
 
 async function getHomeData(): Promise<HomeData> {
-  const fallback: HomeData = { featured: [], latest: [], categories: [], settings: {} };
+  const fallback: HomeData = { featured: [], latest: [], settings: {} };
   try {
-    const [categories, settings, featuredRaw, latestRaw] = await Promise.all([
-      prisma.category.findMany({
-        orderBy: { name: "asc" },
-        take: 8,
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          _count: { select: { posts: { where: { status: "PUBLISHED" } } } },
-        },
-      }),
+    const [settings, featuredRaw, latestRaw] = await Promise.all([
       getSiteSettings(),
       prisma.post.findMany({
         where: { status: "PUBLISHED", featured: true },
@@ -49,7 +39,6 @@ async function getHomeData(): Promise<HomeData> {
     ]);
 
     return {
-      categories,
       settings,
       featured: sanitizePostCards(featuredRaw),
       latest: sanitizePostCards(latestRaw),
@@ -61,7 +50,7 @@ async function getHomeData(): Promise<HomeData> {
 }
 
 export default async function HomePage() {
-  const { featured, latest, categories, settings, error } = await getHomeData();
+  const { featured, latest, settings, error } = await getHomeData();
   const heroPost = featured[0] || latest[0];
   const articles = latest.filter((p) => p.type === "ARTICLE").slice(0, 4);
   const stories = latest.filter((p) => p.type === "STORY").slice(0, 4);
@@ -132,20 +121,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {categories.length > 0 ? (
-        <section className="container-px mx-auto max-w-7xl py-14 sm:py-20">
-          <h2 className="heading-sec mb-10">التصنيفات</h2>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {categories.map((c, idx) => (
-              <Link key={c.id} href={`/categories/${c.slug}`} className="group relative rounded-2xl border border-ink-900/5 bg-cream-50 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-gold-500 hover:shadow-lg sm:p-6" data-testid={`category-card-${c.slug}`}>
-                <div className="mb-2 font-amiri text-3xl text-gold-700">{String(idx + 1).padStart(2, "0")}</div>
-                <div className="font-cairo font-bold text-ink-900 transition-colors group-hover:text-gold-700">{c.name}</div>
-                <div className="mt-1 text-xs text-ink-500">{c._count.posts} منشور</div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <HomeCategories />
 
       {articles.length > 0 || stories.length > 0 ? (
         <section className="container-px mx-auto grid max-w-7xl gap-10 py-12 md:grid-cols-2 md:gap-12">

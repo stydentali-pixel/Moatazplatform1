@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getSiteSettings } from "@/lib/settings";
 import { DEFAULT_LOGO_URL, safeImageUrl } from "@/lib/content";
+import NavCategories from "./NavCategories";
 
 export default async function SiteHeader() {
   const s = await getSiteSettings();
@@ -21,8 +22,11 @@ export default async function SiteHeader() {
         <nav className="hidden items-center gap-7 text-[15px] md:flex">
           <Link href="/" className="text-ink-700 transition-colors hover:text-gold-700" data-testid="nav-home">الرئيسية</Link>
           <Link href="/posts" className="text-ink-700 transition-colors hover:text-gold-700" data-testid="nav-posts">المقالات</Link>
-          <Link href="/categories" className="text-ink-700 transition-colors hover:text-gold-700" data-testid="nav-categories">التصنيفات</Link>
-          <Link href="/tags" className="text-ink-700 transition-colors hover:text-gold-700" data-testid="nav-tags">الوسوم</Link>
+          
+          <div className="h-4 w-px bg-ink-900/10 mx-1" />
+          <NavCategories />
+          <div className="h-4 w-px bg-ink-900/10 mx-1" />
+
           <Link href="/about" className="text-ink-700 transition-colors hover:text-gold-700" data-testid="nav-about">من نحن</Link>
           <Link href="/contact" className="text-ink-700 transition-colors hover:text-gold-700" data-testid="nav-contact">اتصل بنا</Link>
         </nav>
