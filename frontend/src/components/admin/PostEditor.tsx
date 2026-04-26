@@ -37,6 +37,7 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
   const [tags, setTags] = useState<Tg[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
 
@@ -45,7 +46,6 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
     
     async function fetchData() {
       try {
-        // Sequentially fetch to avoid DB pressure, or keep parallel but with better error handling
         const [cRes, tRes] = await Promise.all([
           fetch("/api/admin/categories", { credentials: "include" }),
           fetch("/api/admin/tags", { credentials: "include" }),
@@ -83,16 +83,22 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
   }
 
   async function uploadCover(file: File) {
+    setError(null);
+    setSuccess(null);
     setUploadingCover(true);
     try {
       const fd = new FormData();
       fd.append("file", file);
       const r = await fetch("/api/admin/media", { method: "POST", body: fd, credentials: "include" });
       const j = await r.json();
-      if (j?.success) update("coverImage", j.data.url);
-      else setError(j?.error || "فشل الرفع");
+      if (j?.success) {
+        update("coverImage", j.data.url);
+        setSuccess("تم رفع الصورة بنجاح");
+      } else {
+        setError(j?.error || "فشل رفع الصورة");
+      }
     } catch (err) {
-      setError("حدث خطأ أثناء الرفع");
+      setError("حدث خطأ أثناء الاتصال بالخادم لرفع الصورة");
     } finally {
       setUploadingCover(false);
     }
@@ -105,6 +111,7 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
 
   async function save(targetStatus?: string) {
     setError(null);
+    setSuccess(null);
     setSaving(true);
     try {
       const payload = {
@@ -112,6 +119,19 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
         status: targetStatus || data.status,
         content: editorRef.current?.innerHTML || data.content,
       };
+
+      // Basic validation
+      if (!payload.title.trim()) {
+        setError("يرجى إدخال عنوان المقال");
+        setSaving(false);
+        return;
+      }
+      if (!payload.categoryId) {
+        setError("يرجى اختيار تصنيف للمقال");
+        setSaving(false);
+        return;
+      }
+
       const url = postId ? `/api/admin/posts/${postId}` : "/api/admin/posts";
       const method = postId ? "PATCH" : "POST";
       const r = await fetch(url, {
@@ -121,10 +141,14 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
         body: JSON.stringify(payload),
       });
       const j = await r.json();
+      
       if (!r.ok || !j.success) {
-        setError(typeof j.error === "string" ? j.error : "فشل الحفظ");
+        setError(typeof j.error === "string" ? j.error : "فشل حفظ المقال");
         return;
       }
+
+      setSuccess(targetStatus === "PUBLISHED" ? "تم نشر المقال بنجاح" : "تم حفظ المسودة بنجاح");
+      
       if (!postId) {
         router.push(`/admin/posts/${j.data.id}`);
       } else {
@@ -148,12 +172,17 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
           <h1 className="font-cairo text-2xl sm:text-3xl font-extrabold text-ink-900 mt-2">{postId ? "تعديل مقال" : "مقال جديد"}</h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => save("DRAFT")} disabled={saving} className="btn-ghost text-sm py-2 px-4" data-testid="save-draft-btn">حفظ كمسوّدة</button>
-          <button onClick={() => save("PUBLISHED")} disabled={saving} className="btn-gold text-sm py-2 px-4" data-testid="publish-btn">نشر</button>
+          <button onClick={() => save("DRAFT")} disabled={saving} className="btn-ghost text-sm py-2 px-4" data-testid="save-draft-btn">
+            {saving && data.status === "DRAFT" ? "جاري الحفظ..." : "حفظ كمسوّدة"}
+          </button>
+          <button onClick={() => save("PUBLISHED")} disabled={saving} className="btn-gold text-sm py-2 px-4" data-testid="publish-btn">
+            {saving && data.status === "PUBLISHED" ? "جاري النشر..." : "نشر"}
+          </button>
         </div>
       </div>
 
-      {error ? <div className="mb-6 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3" data-testid="editor-error">{error}</div> : null}
+      {error && <div className="mb-6 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3" data-testid="editor-error">{error}</div>}
+      {success && <div className="mb-6 text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-3" data-testid="editor-success">{success}</div>}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),340px] lg:gap-8">
         {/* Main editor */}
@@ -187,7 +216,7 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
             <div className="flex flex-wrap gap-3">
               <label className="inline-flex items-center justify-center px-4 py-2 rounded-full border border-ink-900/10 text-ink-700 hover:border-gold-500 hover:text-gold-700 cursor-pointer text-sm" data-testid="editor-cover-upload-label">
                 {uploadingCover ? "جاري الرفع..." : "رفع صورة غلاف"}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} data-testid="editor-cover-upload-input"/>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} data-testid="editor-cover-upload-input" disabled={uploadingCover}/>
               </label>
             </div>
             <input
@@ -259,45 +288,30 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
                 </select>
               </label>
               <label className="block">
-                <span className="block text-xs text-ink-500 mb-1">الحالة</span>
-                <select value={data.status} onChange={(e) => update("status", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-status">
-                  <option value="DRAFT">مسودة</option>
-                  <option value="PUBLISHED">منشور</option>
-                  <option value="SCHEDULED">مجدول</option>
-                  <option value="ARCHIVED">مؤرشف</option>
-                </select>
-              </label>
-              
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={data.featured} onChange={(e) => update("featured", e.target.checked)} className="rounded border-ink-900/10 text-gold-700 focus:ring-gold-500" data-testid="editor-featured"/>
-                <span className="text-sm text-ink-900">مختار بعناية (Featured)</span>
-              </label>
-
-              <label className="block">
                 <span className="block text-xs text-ink-500 mb-1">التصنيف</span>
-                <select required value={data.categoryId} onChange={(e) => update("categoryId", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-category">
+                <select value={data.categoryId} onChange={(e) => update("categoryId", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-category">
                   <option value="">اختر تصنيفاً...</option>
                   {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </label>
-            </div>
-          </div>
-
-          <div className="card p-4 sm:p-6">
-            <h3 className="font-cairo font-bold text-ink-900 mb-3">الوسوم</h3>
-            <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1" data-testid="editor-tags-list">
-              {tags.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => toggleTag(t.id)}
-                  className={`px-3 py-1 rounded-full text-xs transition-colors ${
-                    data.tagIds.includes(t.id) ? "bg-gold-700 text-cream-50" : "bg-cream-50 border border-ink-900/5 text-ink-600 hover:border-gold-500"
-                  }`}
-                >
-                  {t.name}
-                </button>
-              ))}
-              {tags.length === 0 && <div className="text-xs text-ink-400">لا توجد وسوم بعد.</div>}
+              <div>
+                <span className="block text-xs text-ink-500 mb-2">الوسوم</span>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => toggleTag(t.id)}
+                      className={`px-3 py-1 rounded-full text-xs border transition-colors ${data.tagIds.includes(t.id) ? "bg-gold-500 border-gold-600 text-white" : "bg-cream-50 border-ink-900/10 text-ink-600 hover:border-gold-500"}`}
+                    >
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={data.featured} onChange={(e) => update("featured", e.target.checked)} className="rounded border-ink-900/10 text-gold-600 focus:ring-gold-500" />
+                <span className="text-sm text-ink-700">مقال مميز</span>
+              </label>
             </div>
           </div>
         </div>
@@ -311,7 +325,7 @@ function ToolbarBtn({ children, onClick }: { children: React.ReactNode; onClick:
     <button
       type="button"
       onClick={onClick}
-      className="px-2 py-1 text-xs rounded border border-ink-900/5 bg-cream-50 hover:bg-gold-500 hover:text-cream-50 transition-colors"
+      className="px-2 py-1 rounded hover:bg-ink-50 text-ink-600 text-sm border border-transparent hover:border-ink-100 transition-all min-w-[32px]"
     >
       {children}
     </button>

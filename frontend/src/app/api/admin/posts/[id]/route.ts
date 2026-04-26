@@ -12,7 +12,7 @@ export const revalidate = 0;
 
 const PatchSchema = z.object({
   title: z.string().optional(),
-  slug: z.string().optional(),
+  slug: z.string().optional().nullable(),
   excerpt: z.string().optional().nullable(),
   content: z.string().optional(),
   coverImage: z.string().optional().nullable(),
@@ -63,8 +63,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     const update: any = {};
     if (d.title !== undefined) update.title = d.title;
-    if (d.slug !== undefined && d.slug.trim()) update.slug = d.slug.trim();
-    else if (d.title && d.title !== current.title) update.slug = await uniquePostSlug(d.title, current.id);
+    
+    // Handle slug uniqueness
+    if (d.slug !== undefined && d.slug?.trim()) {
+      const newSlug = d.slug.trim();
+      if (newSlug !== current.slug) {
+        const existing = await prisma.post.findUnique({ where: { slug: newSlug } });
+        if (existing) return fail("الرابط (slug) مستخدم بالفعل، يرجى اختيار رابط آخر", 400);
+        update.slug = newSlug;
+      }
+    } else if (d.title && d.title !== current.title) {
+      update.slug = await uniquePostSlug(d.title, current.id);
+    }
+
     if (d.excerpt !== undefined) update.excerpt = d.excerpt?.trim() || generateExcerpt(d.content ?? current.content, d.title ?? current.title);
     if (d.content !== undefined) {
       update.content = d.content;
@@ -78,14 +89,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (d.seoDescription !== undefined) update.seoDescription = d.seoDescription;
     if (d.canonicalUrl !== undefined) update.canonicalUrl = d.canonicalUrl;
     if (d.scheduledAt !== undefined) update.scheduledAt = d.scheduledAt ? new Date(d.scheduledAt) : null;
+    
     if (d.excerpt === undefined && (d.content !== undefined || d.title !== undefined) && !current.excerpt) {
       update.excerpt = generateExcerpt(d.content ?? current.content, d.title ?? current.title);
     }
 
     if (d.status !== undefined) {
       update.status = d.status;
-      if (d.status === "PUBLISHED" && !(d.categoryId ?? current.categoryId)) return fail("اختر التصنيف قبل النشر", 400);
-      if (d.status === "PUBLISHED" && !current.publishedAt) update.publishedAt = new Date();
+      if (d.status === "PUBLISHED") {
+        if (!(d.categoryId ?? current.categoryId)) return fail("اختر التصنيف قبل النشر", 400);
+        if (!current.publishedAt) update.publishedAt = new Date();
+      }
     }
 
     const updated = await prisma.$transaction(async (tx) => {

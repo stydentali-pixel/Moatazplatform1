@@ -12,14 +12,14 @@ export const revalidate = 0;
 
 const PostSchema = z.object({
   title: z.string().min(1, "العنوان مطلوب"),
-  slug: z.string().optional(),
+  slug: z.string().optional().nullable(),
   excerpt: z.string().optional().nullable(),
   content: z.string().optional().default(""),
   coverImage: z.string().optional().nullable(),
   type: z.enum(["ARTICLE", "STORY", "LINK", "IMAGE", "VIDEO", "QUOTE"]).default("ARTICLE"),
   status: z.enum(["DRAFT", "PUBLISHED", "SCHEDULED", "ARCHIVED"]).default("DRAFT"),
   featured: z.boolean().default(false),
-  categoryId: z.string().optional().nullable(),
+  categoryId: z.string().min(1, "التصنيف مطلوب"),
   tagIds: z.array(z.string()).optional().default([]),
   seoTitle: z.string().optional().nullable(),
   seoDescription: z.string().optional().nullable(),
@@ -81,11 +81,11 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) return fail(parsed.error.errors[0]?.message || "بيانات غير صحيحة", 400);
     const d = parsed.data;
 
+    // Ensure unique slug
     const slug = d.slug?.trim() || (await uniquePostSlug(d.title));
     const existing = await prisma.post.findUnique({ where: { slug } });
-    if (existing) return fail("الرابط مستخدم بالفعل", 400);
+    if (existing) return fail("الرابط (slug) مستخدم بالفعل، يرجى اختيار عنوان أو رابط آخر", 400);
 
-    if (d.status === "PUBLISHED" && !d.categoryId) return fail("اختر التصنيف قبل النشر", 400);
     const finalExcerpt = d.excerpt?.trim() || generateExcerpt(d.content, d.title) || null;
     const finalCover = safeImageUrl(d.coverImage) || null;
     const publishedAt = d.status === "PUBLISHED" ? new Date() : null;
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
         publishedAt,
         scheduledAt,
         authorId: user.id,
-        categoryId: d.categoryId || null,
+        categoryId: d.categoryId,
         tags: { create: (d.tagIds || []).map((tagId) => ({ tagId })) },
       },
     });
