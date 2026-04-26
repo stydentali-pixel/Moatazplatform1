@@ -12,6 +12,7 @@ const FIELDS: Array<{ key: string; label: string; type?: string; placeholder?: s
   { key: "facebook", label: "رابط فيسبوك" },
   { key: "instagram", label: "رابط إنستغرام" },
   { key: "youtube", label: "رابط يوتيوب" },
+  { key: "telegram", label: "رابط تليجرام" },
 ];
 
 export default function SettingsAdmin() {

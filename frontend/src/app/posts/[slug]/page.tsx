@@ -21,22 +21,34 @@ const TYPE_LABELS: Record<string, string> = {
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const post = await prisma.post.findUnique({ 
     where: { slug: params.slug },
-    select: { title: true, seoTitle: true, excerpt: true, seoDescription: true, coverImage: true, canonicalUrl: true }
+    select: { title: true, slug: true, seoTitle: true, excerpt: true, seoDescription: true, coverImage: true, canonicalUrl: true, content: true }
   });
   
   if (!post) return { title: "غير موجود" };
   
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const title = post.seoTitle || post.title;
+  const description = post.seoDescription || post.excerpt || (post.content ? generateExcerpt(post.content, post.title) : undefined);
+  const image = safeImageUrl(post.coverImage);
+  const canonical = post.canonicalUrl || (siteUrl ? `${siteUrl}/posts/${post.slug}` : undefined);
+  
   return {
-    title: `${post.seoTitle || post.title} — منصة معتز`,
-    description: post.seoDescription || post.excerpt || undefined,
-    alternates: post.canonicalUrl ? { canonical: post.canonicalUrl } : undefined,
+    title: `${title} — منصة معتز`,
+    description,
+    alternates: canonical ? { canonical } : undefined,
     openGraph: {
-      title: post.seoTitle || post.title,
-      description: post.seoDescription || post.excerpt || undefined,
-      images: safeImageUrl(post.coverImage) ? [safeImageUrl(post.coverImage)!] : undefined,
+      title,
+      description,
+      images: image ? [image] : undefined,
       type: "article",
+      url: canonical,
     },
-    twitter: { card: "summary_large_image", title: post.seoTitle || post.title, description: post.seoDescription || post.excerpt || undefined, images: safeImageUrl(post.coverImage) ? [safeImageUrl(post.coverImage)!] : undefined },
+    twitter: { 
+      card: "summary_large_image", 
+      title, 
+      description, 
+      images: image ? [image] : undefined 
+    },
   };
 }
 

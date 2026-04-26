@@ -38,6 +38,7 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
 
@@ -149,6 +150,13 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
 
       setSuccess(targetStatus === "PUBLISHED" ? "تم نشر المقال بنجاح" : "تم حفظ المسودة بنجاح");
       
+      if (targetStatus === "PUBLISHED" || j.data.status === "PUBLISHED") {
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+        setPublishedUrl(`${siteUrl}/posts/${j.data.slug}`);
+      } else {
+        setPublishedUrl(null);
+      }
+
       if (!postId) {
         router.push(`/admin/posts/${j.data.id}`);
       } else {
@@ -182,7 +190,31 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
       </div>
 
       {error && <div className="mb-6 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3" data-testid="editor-error">{error}</div>}
-      {success && <div className="mb-6 text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-3" data-testid="editor-success">{success}</div>}
+      {success && (
+        <div className="mb-6 space-y-3">
+          <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl px-4 py-3" data-testid="editor-success">
+            {success}
+          </div>
+          {publishedUrl && (
+            <div className="flex items-center gap-3 bg-gold-50 border border-gold-200 rounded-xl px-4 py-3 text-sm">
+              <span className="text-gold-800 font-bold shrink-0">رابط المقال:</span>
+              <code className="bg-white/50 px-2 py-1 rounded border border-gold-200 text-gold-900 truncate flex-1">{publishedUrl}</code>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(publishedUrl);
+                  alert("تم نسخ الرابط!");
+                }}
+                className="text-gold-700 hover:text-gold-900 font-bold shrink-0"
+              >
+                نسخ الرابط
+              </button>
+              <a href={publishedUrl} target="_blank" rel="noopener noreferrer" className="text-ink-900 hover:underline shrink-0">
+                زيارة المقال ↗
+              </a>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),340px] lg:gap-8">
         {/* Main editor */}

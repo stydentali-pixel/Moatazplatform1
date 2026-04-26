@@ -2,14 +2,17 @@ import slugify from "slugify";
 import { prisma } from "./prisma";
 
 export function arabicSlugify(input: string): string {
+  if (!input) return `post-${Date.now()}`;
   // slugify with Arabic support: convert spaces to dashes, remove problematic chars
   const base = slugify(input, { lower: true, strict: false, trim: true, locale: "ar" });
   // strict:false keeps Arabic letters; remove anything that's not letters/digits/dash
-  return base
+  const slug = base
     .replace(/[^\p{L}\p{N}-]/gu, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
-    .slice(0, 120) || `post-${Date.now()}`;
+    .slice(0, 120);
+  
+  return slug || `post-${Date.now()}`;
 }
 
 export async function uniquePostSlug(title: string, ignoreId?: string): Promise<string> {
