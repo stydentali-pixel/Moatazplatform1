@@ -1,80 +1,71 @@
 # PRD — Moataz Platform (معتز العلقمي)
 
 ## Original Problem Statement
-Build a production-ready full-stack Arabic content platform "Moataz Platform | معتز العلقمي".
-Luxury Arabic RTL blog/media for: مقالات / قصص / روابط / صور / فيديوهات / اقتباسات.
-Real working app: Frontend + Backend + DB + Auth + Admin Dashboard + Public API.
+Production-ready full-stack Arabic content platform: مقالات / قصص / روابط / صور / فيديوهات / اقتباسات. Real working app with FE + BE + DB + Auth + Admin Dashboard + Public API.
 
 ## User Choices (gathered Jan 2026)
-- **Stack**: Next.js 14 (App Router) + TypeScript + PostgreSQL + Prisma  ✅
-- **Auth**: Custom JWT (email/password) — admin@site.com / 123456  ✅
-- **AI**: DISABLED (`ENABLE_AI_CONTENT=false`) — placeholder content only  ✅
-- **Telegram Bot**: structure prepared, NOT activated (safe fallback)  ✅
-- **Media storage**: Supabase Storage with safe fallback when keys absent  ✅
+- **Stack**: Next.js 14 + TypeScript + PostgreSQL + Prisma ✅
+- **Auth**: Custom JWT — admin@site.com / 123456 ✅
+- **AI**: DISABLED — placeholder content only ✅
+- **Telegram Bot**: structure prepared, NOT activated ✅
+- **Media storage**: Supabase Storage (with safe inline fallback) ✅
 
 ## Architecture
-- Next.js (full-stack) on port 3000 — pages + API routes
-- FastAPI proxy on port 8001 → forwards to localhost:3000 (because k8s ingress routes `/api/*` to 8001)
-- PostgreSQL on port 5432 (managed via supervisor)
-- Prisma ORM
+- Next.js (port 3000) full-stack — pages + API routes
+- FastAPI proxy (port 8001) → forwards to Next.js (k8s ingress maps `/api/*` to 8001)
+- PostgreSQL (port 5432) under supervisor
+- Prisma ORM with `directUrl` for migrations
 - bcryptjs + jsonwebtoken + httpOnly cookies (`moataz_token`)
-- Tailwind + Cairo/Tajawal/Amiri Arabic fonts
-- RTL-first design with deep gold + warm cream palette
+- Tailwind + Cairo/Tajawal/Amiri Arabic fonts, RTL-first design
+
+## Environment File Structure
+| File | When loaded | Purpose |
+| --- | --- | --- |
+| `.env` | always | Defaults — local PostgreSQL for Emergent preview |
+| `.env.production` | `next start` | Supabase URLs for Vercel production |
+| `.env.local` | dev only, gitignored | Personal overrides on user's local laptop |
+| `.env.local.example` | template | Copy to `.env.local` for local Supabase use |
 
 ## Database Models
-User (ADMIN/EDITOR/AUTHOR), Post (DRAFT/PUBLISHED/SCHEDULED/ARCHIVED, types: ARTICLE/STORY/LINK/IMAGE/VIDEO/QUOTE), Category, Tag, PostTag, Media, Page, Setting, ArticleIdea (SUGGESTED/DRAFTED/APPROVED/REJECTED/SCHEDULED/PUBLISHED), AutomationLog, Subscriber.
+User (ADMIN/EDITOR/AUTHOR), Post (DRAFT/PUBLISHED/SCHEDULED/ARCHIVED, types ARTICLE/STORY/LINK/IMAGE/VIDEO/QUOTE), Category, Tag, PostTag, Media, Page, Setting, ArticleIdea (SUGGESTED/DRAFTED/APPROVED/REJECTED/SCHEDULED/PUBLISHED), AutomationLog, Subscriber.
 
-## Implemented (Apr 25, 2026 / Jan 2026)
+## Implemented (Apr 2026)
 ### Public Site
-- Home with hero, featured, latest, categories grid, mixed sections, newsletter strip ✅
-- Posts archive with filters (type, sort) + pagination ✅
-- Single post with cover, content, tags, related, SEO metadata + OG/Twitter ✅
-- Category page, Tag page, Tags index, Categories index ✅
-- Search page (live) ✅
-- About / Contact pages ✅
-- Sitemap.xml, robots.txt ✅
-- Newsletter subscription ✅
+Home, Posts archive (filters + pagination), single post (rich content + tags + related + SEO), category page, tag page, tags index, categories index, search (with deep-link `?q=`), about, contact, sitemap.xml, robots.txt, newsletter subscribe.
 
-### Admin Dashboard (full Arabic, protected by middleware)
-- Login (`/admin/login`) ✅
-- Dashboard with stat cards + recent posts + quick actions ✅
-- Posts: list (filter by status, search), create, edit (rich editor with H2/H3/lists/quote/code/links/images), delete, archive, schedule, feature toggle ✅
-- Categories CRUD with auto slug ✅
-- Tags CRUD with auto slug ✅
-- Media library with upload (Supabase or fallback), copy URL, delete ✅
-- Pages CRUD (static pages) ✅
-- Article Ideas: create, approve/reject, convert to draft, direct publish (gated by ENABLE_DIRECT_PUBLISH) ✅
-- Settings (site name, description, logo, colors, social links, email) ✅
+### Admin Dashboard (Arabic, middleware-protected)
+Login, dashboard stats + recent posts + quick actions, posts CRUD with rich-text editor (H2/H3/lists/quote/code/links/images), categories CRUD with auto-slug, tags CRUD with auto-slug, media library with Supabase + inline fallback, pages CRUD, article ideas (approve/reject/convert to draft / direct publish gated by ENABLE_DIRECT_PUBLISH), settings (site name/description/logo/colors/social links/email).
 
-### APIs (all under /api/)
-- Auth: login, logout, me ✅
-- Public: posts, posts/[slug], categories, tags, search, settings, pages/[slug], subscribe ✅
-- Admin: stats, posts CRUD, categories CRUD, tags CRUD, media CRUD, ideas CRUD + convert, settings, pages CRUD ✅
+### APIs
+**Public**: `/api/public/{posts,posts/[slug],categories,tags,search,settings,pages/[slug],subscribe}`
+**Auth**: `/api/auth/{login,logout,me}`
+**Admin**: `/api/admin/{stats,posts,posts/[id],categories,categories/[id],tags,tags/[id],media,media/[id],ideas,ideas/[id],ideas/[id]/convert,settings,pages,pages/[id]}`
 
 ### Integrations
-- Supabase Storage (with safe fallback to inline data URL) ✅
-- Telegram bot scaffold (start gated by ENV) ✅
+- Supabase Storage (auto-fallback to inline when keys absent)
+- Telegram bot scaffold (start gated by env)
 
 ### Seeded
-- 1 admin (معتز العلقمي)
-- 5 categories (مقالات/قصص/صور/فيديوهات/روابط)
-- 5 tags (ثقافة/تقنية/مجتمع/رأي/إلهام)
-- 3 real posts (writing-that-lasts, ai-and-arabic, one-cairo-night)
-- 3 article ideas
-- 9 site settings
+1 admin (معتز العلقمي), 5 categories, 5 tags, 3 real posts, 3 article ideas, 9 site settings.
+
+## Test Results
+- Backend: 45/45 PASS (3 iterations)
+- Frontend: full admin UI E2E pass (login → dashboard → posts CRUD → categories/tags/ideas/settings)
+- Production build: `yarn build` succeeds
 
 ## Backlog / Next
-- P1: AI content generation (toggle ENABLE_AI_CONTENT=true with Emergent LLM key)
-- P1: Real Supabase credentials for production media
-- P1: Telegram bot activation with token + admin id
+- P1: Set real `NEXT_PUBLIC_SITE_URL` in `.env.production` before deploying
+- P1: Use Supabase Pooler URL (`postgres.PROJECT_REF:PASS@aws-0-REGION.pooler.supabase.com:6543/postgres`) if direct IPv6 unavailable
+- P1: AI content generation (set `ENABLE_AI_CONTENT=true` + add Emergent LLM key)
+- P1: Real `SUPABASE_SERVICE_ROLE_KEY` for cloud media
+- P1: Telegram bot activation (add `TELEGRAM_BOT_TOKEN` + call `startBot()` from a startup hook)
 - P2: Comment system (model exists, not exposed)
-- P2: User management UI (CRUD other users)
-- P2: Multi-author bios
-- P2: Social share buttons on posts
-- P3: Markdown alongside HTML in editor
-- P3: Image editor / cropper
+- P2: User management UI
+- P2: Social share buttons on post pages
+- P3: Tiptap upgrade for editor
+- P3: External cron for auto-publishing SCHEDULED posts
 
 ## Known Limitations
-- Editor uses execCommand (deprecated but works); upgrade to Tiptap/Slate later.
-- Without Supabase keys, uploaded media is stored as data URL in DB (works but not scalable).
-- No automated bot scheduler — `SCHEDULED` posts need manual cron or external scheduler.
+- Direct Supabase DB hostname requires IPv6 (Emergent preview lacks it). Production platforms (Vercel/Railway) have IPv6 → works there. Pooler URL is the IPv4-friendly alternative.
+- Editor uses contentEditable + execCommand (deprecated but functional).
+- No automated scheduler — `SCHEDULED` posts need a cron.
