@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { safeImageUrl, stripHtml } from "@/lib/content";
 
 export type PostCardData = {
   id: string;
@@ -21,27 +22,39 @@ const TYPE_LABELS: Record<string, string> = {
   QUOTE: "اقتباس",
 };
 
+function Cover({ src, title, feature = false }: { src?: string | null; title: string; feature?: boolean }) {
+  const cover = safeImageUrl(src);
+  return cover ? (
+    <img
+      src={cover}
+      alt={title}
+      loading="lazy"
+      decoding="async"
+      className={`h-full w-full object-cover ${feature ? "transition-transform duration-700 group-hover:scale-105" : ""}`}
+    />
+  ) : (
+    <div className="h-full w-full bg-gradient-to-br from-cream-200 to-cream-100" />
+  );
+}
+
 export default function PostCard({ post, variant = "default" }: { post: PostCardData; variant?: "default" | "feature" | "compact" }) {
   const date = post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" }) : "";
+  const excerpt = stripHtml(post.excerpt, 150);
 
   if (variant === "feature") {
     return (
-      <Link href={`/posts/${post.slug}`} className="card group block relative" data-testid={`post-card-${post.slug}`}>
+      <Link href={`/posts/${post.slug}`} className="card group relative block" data-testid={`post-card-${post.slug}`}>
         <div className="relative aspect-[16/10] overflow-hidden bg-cream-100">
-          {post.coverImage ? (
-            <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-cream-200 to-cream-100" />
-          )}
-          <div className="absolute top-4 right-4 flex gap-2">
-            <span className="bg-ink-900 text-gold-300 text-[11px] px-2 py-1 rounded-full">{TYPE_LABELS[post.type] || post.type}</span>
-            {post.category ? <span className="bg-cream-50/95 backdrop-blur text-ink-900 text-[11px] px-2 py-1 rounded-full">{post.category.name}</span> : null}
+          <Cover src={post.coverImage} title={post.title} feature />
+          <div className="absolute right-4 top-4 flex gap-2">
+            <span className="rounded-full bg-ink-900 px-2 py-1 text-[11px] text-gold-300">{TYPE_LABELS[post.type] || post.type}</span>
+            {post.category ? <span className="rounded-full bg-cream-50/95 px-2 py-1 text-[11px] text-ink-900 backdrop-blur">{post.category.name}</span> : null}
           </div>
         </div>
-        <div className="p-6">
-          <h3 className="font-cairo font-bold text-xl md:text-2xl text-ink-900 leading-snug group-hover:text-gold-700 transition-colors">{post.title}</h3>
-          {post.excerpt ? <p className="mt-3 text-ink-600 text-sm leading-7 line-clamp-2">{post.excerpt}</p> : null}
-          <div className="mt-4 flex items-center gap-4 text-xs text-ink-500">
+        <div className="p-5 sm:p-6">
+          <h3 className="font-cairo text-xl font-bold leading-snug text-ink-900 transition-colors group-hover:text-gold-700 md:text-2xl">{post.title}</h3>
+          {excerpt ? <p className="mt-3 line-clamp-2 text-sm leading-7 text-ink-600">{excerpt}</p> : null}
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-ink-500">
             {date ? <span>{date}</span> : null}
             {post.readingTime ? <span>· {post.readingTime} د قراءة</span> : null}
           </div>
@@ -52,13 +65,13 @@ export default function PostCard({ post, variant = "default" }: { post: PostCard
 
   if (variant === "compact") {
     return (
-      <Link href={`/posts/${post.slug}`} className="flex gap-4 group" data-testid={`post-card-${post.slug}`}>
-        <div className="w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-cream-100">
-          {post.coverImage ? <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover" /> : null}
+      <Link href={`/posts/${post.slug}`} className="group flex gap-4" data-testid={`post-card-${post.slug}`}>
+        <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-cream-100">
+          <Cover src={post.coverImage} title={post.title} />
         </div>
-        <div className="flex-1">
-          <div className="text-[11px] text-gold-700 mb-1">{TYPE_LABELS[post.type] || post.type}</div>
-          <h3 className="font-cairo font-bold text-base text-ink-900 leading-snug line-clamp-2 group-hover:text-gold-700 transition-colors">{post.title}</h3>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 text-[11px] text-gold-700">{TYPE_LABELS[post.type] || post.type}</div>
+          <h3 className="line-clamp-2 font-cairo text-base font-bold leading-snug text-ink-900 transition-colors group-hover:text-gold-700">{post.title}</h3>
           <div className="mt-2 text-xs text-ink-500">{date}</div>
         </div>
       </Link>
@@ -68,20 +81,16 @@ export default function PostCard({ post, variant = "default" }: { post: PostCard
   return (
     <Link href={`/posts/${post.slug}`} className="card group block" data-testid={`post-card-${post.slug}`}>
       <div className="relative aspect-[3/2] overflow-hidden bg-cream-100">
-        {post.coverImage ? (
-          <img src={post.coverImage} alt={post.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-cream-200 to-cream-100" />
-        )}
-        <span className="absolute top-3 right-3 bg-cream-50/95 backdrop-blur text-ink-900 text-[11px] px-2 py-1 rounded-full">
+        <Cover src={post.coverImage} title={post.title} feature />
+        <span className="absolute right-3 top-3 rounded-full bg-cream-50/95 px-2 py-1 text-[11px] text-ink-900 backdrop-blur">
           {TYPE_LABELS[post.type] || post.type}
         </span>
       </div>
       <div className="p-5">
-        {post.category ? <div className="text-[11px] text-gold-700 mb-2">{post.category.name}</div> : null}
-        <h3 className="font-cairo font-bold text-lg text-ink-900 leading-snug line-clamp-2 group-hover:text-gold-700 transition-colors">{post.title}</h3>
-        {post.excerpt ? <p className="mt-2 text-ink-600 text-sm leading-7 line-clamp-2">{post.excerpt}</p> : null}
-        <div className="mt-4 flex items-center gap-3 text-xs text-ink-500">
+        {post.category ? <div className="mb-2 text-[11px] text-gold-700">{post.category.name}</div> : null}
+        <h3 className="line-clamp-2 font-cairo text-lg font-bold leading-snug text-ink-900 transition-colors group-hover:text-gold-700">{post.title}</h3>
+        {excerpt ? <p className="mt-2 line-clamp-2 text-sm leading-7 text-ink-600">{excerpt}</p> : null}
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-ink-500">
           {date ? <span>{date}</span> : null}
           {post.readingTime ? <span>· {post.readingTime} د قراءة</span> : null}
         </div>

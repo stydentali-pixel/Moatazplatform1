@@ -4,8 +4,10 @@ import SiteFooter from "@/components/SiteFooter";
 import PostCard from "@/components/PostCard";
 import PostsFilters from "@/components/PostsFilters";
 import { prisma } from "@/lib/prisma";
+import { postCardSelect, sanitizePostCards } from "@/lib/content";
 
-export const revalidate = 1800; // 30 minutes
+export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "المقالات — معتز العلقمي",
@@ -35,22 +37,11 @@ export default async function PostsPage({ searchParams }: { searchParams: Record
         orderBy,
         skip: (page - 1) * limit,
         take: limit,
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          excerpt: true,
-          coverImage: true,
-          type: true,
-          status: true,
-          publishedAt: true,
-          readingTime: true,
-          category: { select: { id: true, name: true, slug: true } },
-          author: { select: { id: true, name: true } }
-        },
+        select: postCardSelect,
       }),
       prisma.post.count({ where }),
     ]);
+    items = sanitizePostCards(items);
   } catch (error) {
     console.error("Posts page data error", error);
     errorOccurred = true;

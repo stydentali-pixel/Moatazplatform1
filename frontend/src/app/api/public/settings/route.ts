@@ -1,13 +1,15 @@
-import { prisma } from "@/lib/prisma";
-import { ok } from "@/lib/api";
+import { ok, fail } from "@/lib/api";
+import { getSiteSettings } from "@/lib/settings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
-  const settings = await prisma.setting.findMany();
-  const map: Record<string, string> = {};
-  for (const s of settings) map[s.key] = s.value;
-  return ok(map);
+  try {
+    return ok(await getSiteSettings());
+  } catch (error) {
+    console.error("Public settings error", error);
+    return fail("تعذر تحميل الإعدادات", 503);
+  }
 }

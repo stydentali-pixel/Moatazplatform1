@@ -4,9 +4,10 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import PostCard from "@/components/PostCard";
 import { prisma } from "@/lib/prisma";
+import { postCardSelect, sanitizePostCards, safeImageUrl, truncateHtml } from "@/lib/content";
 import type { Metadata } from "next";
 
-export const revalidate = 3600; // 1 hour
+export const revalidate = 300;
 
 const TYPE_LABELS: Record<string, string> = {
   ARTICLE: "مقال",
@@ -32,10 +33,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     openGraph: {
       title: post.seoTitle || post.title,
       description: post.seoDescription || post.excerpt || undefined,
-      images: post.coverImage ? [post.coverImage] : undefined,
+      images: safeImageUrl(post.coverImage) ? [safeImageUrl(post.coverImage)!] : undefined,
       type: "article",
     },
-    twitter: { card: "summary_large_image", title: post.seoTitle || post.title, description: post.seoDescription || post.excerpt || undefined, images: post.coverImage ? [post.coverImage] : undefined },
+    twitter: { card: "summary_large_image", title: post.seoTitle || post.title, description: post.seoDescription || post.excerpt || undefined, images: safeImageUrl(post.coverImage) ? [safeImageUrl(post.coverImage)!] : undefined },
   };
 }
 
@@ -63,26 +64,12 @@ export default async function PostPage({ params }: { params: { slug: string } })
     });
 
     if (post) {
-      related = await prisma.post.findMany({
+      related = sanitizePostCards(await prisma.post.findMany({
         where: { status: "PUBLISHED", id: { not: post.id }, categoryId: post.categoryId },
         take: 3,
         orderBy: { publishedAt: "desc" },
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          excerpt: true,
-          coverImage: true,
-          type: true,
-          status: true,
-          featured: true,
-          views: true,
-          readingTime: true,
-          publishedAt: true,
-          category: { select: { name: true, slug: true } },
-          author: { select: { name: true } }
-        },
-      });
+        select: postCardSelect,
+      }));
 
       // Background views update
       prisma.post.update({ where: { id: post.id }, data: { views: { increment: 1 } } }).catch(() => null);
@@ -121,14 +108,14 @@ export default async function PostPage({ params }: { params: { slug: string } })
         </div>
       </article>
 
-      {post.coverImage ? (
+      {safeImageUrl(post.coverImage) ? (
         <div className="container-px max-w-5xl mx-auto">
-          <img src={post.coverImage} alt={post.title} className="w-full rounded-3xl aspect-[16/9] object-cover" />
+          <img src={safeImageUrl(post.coverImage) || ""} alt={post.title} loading="lazy" decoding="async" className="w-full rounded-3xl aspect-[16/9] object-cover" />
         </div>
       ) : null}
 
       <article className="container-px max-w-3xl mx-auto py-12">
-        <div className="prose-rtl" data-testid="post-content" dangerouslySetInnerHTML={{ __html: post.content }} />
+        <div className="prose-rtl" data-testid="post-content" dangerouslySetInnerHTML={{ __html: truncateHtml(post.content) }} />
 
         {post.tags.length > 0 ? (
           <div className="mt-10 flex flex-wrap gap-2">

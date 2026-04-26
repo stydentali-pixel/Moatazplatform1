@@ -98,6 +98,9 @@ model Post {
   @@index([status, publishedAt])
   @@index([type])
   @@index([featured])
+  @@index([categoryId])
+  @@index([slug])
+  @@index([createdAt])
 }
 
 model PostTag {

@@ -3,8 +3,9 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import PostCard from "@/components/PostCard";
 import { prisma } from "@/lib/prisma";
+import { postCardSelect, sanitizePostCards } from "@/lib/content";
 
-export const revalidate = 3600; // 1 hour
+export const revalidate = 300;
 
 export default async function TagPage({ params }: { params: { slug: string } }) {
   let tag: any = null;
@@ -43,7 +44,7 @@ export default async function TagPage({ params }: { params: { slug: string } }) 
         },
         orderBy: { post: { publishedAt: "desc" } }
       });
-      posts = links.map((l: any) => l.post);
+      posts = sanitizePostCards(links.map((l: any) => l.post));
     }
   } catch (error) {
     console.error("Tag page error", error);

@@ -3,8 +3,9 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import PostCard from "@/components/PostCard";
 import { prisma } from "@/lib/prisma";
+import { postCardSelect, sanitizePostCards } from "@/lib/content";
 
-export const revalidate = 3600; // 1 hour
+export const revalidate = 300;
 
 export default async function CategoryPage({ params }: { params: { slug: string } }) {
   let cat: any = null;
@@ -18,24 +19,12 @@ export default async function CategoryPage({ params }: { params: { slug: string 
     });
     
     if (cat) {
-      posts = await prisma.post.findMany({
+      posts = sanitizePostCards(await prisma.post.findMany({
         where: { status: "PUBLISHED", categoryId: cat.id },
-        orderBy: { publishedAt: "desc" },
-        take: 24, // Safety limit for category pages
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          excerpt: true,
-          coverImage: true,
-          type: true,
-          status: true,
-          publishedAt: true,
-          readingTime: true,
-          category: { select: { id: true, name: true, slug: true } },
-          author: { select: { id: true, name: true } }
-        },
-      });
+        orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+        take: 24,
+        select: postCardSelect,
+      }));
     }
   } catch (error) {
     console.error("Category page error", error);

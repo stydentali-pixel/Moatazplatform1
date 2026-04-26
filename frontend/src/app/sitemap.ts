@@ -24,9 +24,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       prisma.post.findMany({
         where: { status: "PUBLISHED" },
         select: { slug: true, updatedAt: true },
+        take: 1000,
       }),
-      prisma.category.findMany({ select: { slug: true } }),
-      prisma.tag.findMany({ select: { slug: true } }),
+      prisma.category.findMany({ select: { slug: true }, take: 300 }),
+      prisma.tag.findMany({ select: { slug: true }, take: 500 }),
     ]);
 
     return [

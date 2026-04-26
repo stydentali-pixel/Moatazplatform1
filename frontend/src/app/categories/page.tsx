@@ -3,31 +3,45 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
+export const revalidate = 600;
 export const metadata = { title: "التصنيفات — معتز العلقمي" };
 
 export default async function CategoriesPage() {
-  const cats = await prisma.category.findMany({
-    orderBy: { name: "asc" },
-    include: { _count: { select: { posts: { where: { status: "PUBLISHED" } } } } },
-  });
+  let cats: Array<{ id: string; name: string; slug: string; description: string | null; _count: { posts: number } }> = [];
+  let error = false;
+  try {
+    cats = await prisma.category.findMany({
+      orderBy: { name: "asc" },
+      take: 50,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        _count: { select: { posts: { where: { status: "PUBLISHED" } } } },
+      },
+    });
+  } catch (e) {
+    console.error("Categories page error", e);
+    error = true;
+  }
 
   return (
     <>
       <SiteHeader />
-      <section className="container-px max-w-7xl mx-auto py-14">
+      <section className="container-px mx-auto max-w-7xl py-14">
         <div className="mb-10">
-          <div className="text-gold-700 text-sm tracking-widest mb-2">المنصّة</div>
+          <div className="mb-2 text-sm tracking-widest text-gold-700">المنصّة</div>
           <h1 className="heading-sec">التصنيفات</h1>
           <p className="mt-4 text-ink-600">اختر تصنيفاً لاكتشاف ما يهمّك.</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-5">
+        {error ? <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-800">تعذر تحميل التصنيفات الآن.</div> : null}
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {cats.map((c, idx) => (
-            <Link key={c.id} href={`/categories/${c.slug}`} className="card p-7 group" data-testid={`category-${c.slug}`}>
-              <div className="font-amiri text-gold-700 text-3xl mb-3">{String(idx + 1).padStart(2, "0")}</div>
-              <h3 className="font-cairo font-bold text-2xl text-ink-900 group-hover:text-gold-700 transition-colors">{c.name}</h3>
-              {c.description ? <p className="mt-2 text-ink-600 text-sm leading-7">{c.description}</p> : null}
+            <Link key={c.id} href={`/categories/${c.slug}`} className="card group p-6 sm:p-7" data-testid={`category-${c.slug}`}>
+              <div className="mb-3 font-amiri text-3xl text-gold-700">{String(idx + 1).padStart(2, "0")}</div>
+              <h3 className="font-cairo text-2xl font-bold text-ink-900 transition-colors group-hover:text-gold-700">{c.name}</h3>
+              {c.description ? <p className="mt-2 text-sm leading-7 text-ink-600">{c.description}</p> : null}
               <div className="mt-4 text-xs text-ink-500">{c._count.posts} منشور</div>
             </Link>
           ))}
