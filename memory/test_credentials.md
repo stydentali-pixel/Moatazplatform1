@@ -1,8 +1,8 @@
 # Test Credentials — Moataz Platform
 
 ## Admin
-- **Email:** `admin@site.com`
-- **Password:** `123456`
+- **Email:** `moataz775498320@gmail.com`
+- **Password:** `Moataz7754@#`
 - **Role:** ADMIN
 - **Login URL:** `/admin/login`
 - **Dashboard URL:** `/admin`

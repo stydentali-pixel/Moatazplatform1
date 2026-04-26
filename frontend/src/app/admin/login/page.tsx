@@ -6,8 +6,8 @@ import Link from "next/link";
 function LoginForm() {
   const router = useRouter();
   const sp = useSearchParams();
-  const [email, setEmail] = useState("admin@site.com");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -74,10 +74,6 @@ function LoginForm() {
       <button type="submit" disabled={loading} className="btn-gold w-full disabled:opacity-60" data-testid="login-submit-btn">
         {loading ? "..." : "دخول"}
       </button>
-
-      <p className="text-xs text-ink-500 mt-6 text-center">
-        للمسؤول الافتراضي: admin@site.com / 123456
-      </p>
     </form>
   );
 }

@@ -4,8 +4,8 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@site.com";
-  const adminPassword = process.env.ADMIN_PASSWORD || "123456";
+  const adminEmail = process.env.ADMIN_EMAIL || "moataz775498320@gmail.com";
+  const adminPassword = process.env.ADMIN_PASSWORD || "Moataz7754@#";
 
   // Admin user
   const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
@@ -145,7 +145,7 @@ async function main() {
         "قصّة قصيرة عن لقاءٍ عابر في مقهى وسط البلد، وكيف يمكن لخمس دقائق أن تُعيد ترتيب عمرٍ كامل.",
       content: `<p>كانت الساعة تقترب من الحادية عشرة حين دخلت المقهى. الدخان يتصاعد من فناجين القهوة كأنّه يحاول الهروب من الحديث. جلستُ في الزاوية التي اعتدتُها، وفتحتُ الكتاب. لم أكن أنتظر أحداً، لكنّ المدينة لها عادةٌ في أن تُرسل لك من تحتاج، حين لا تطلب.</p>
 <p>"تسمح؟" قالت، وأشارت إلى الكرسي المقابل. كانت كلّ الكراسي الأخرى فارغة. ابتسمتُ. أومأتُ.</p>
-<p>قالت إنّها تكتب أطروحتها عن الخطّ العربي. قلتُ إنّي أكتب، لكنّي لا أعرف عمّا. ضحكنا. ثم سكتنا. ثم سكتنا أكثر. خمس دقائق فقط، ثم نهضت، وقالت "شكراً" دون أن أعرف على ماذا، ومضت.</p>
+<p>قالت إنّها تكتب أطروحتها عن الخطّ العربي. قلتُ إنّي أكتب، لكنّي لا أعرف عمّا. ضحكنا. ثم سكتنا. ثم سكتنا أكثر. خمس دقائق فقط، ثم نهضت, وقالت "شكراً" دون أن أعرف على ماذا، ومضت.</p>
 <p>منذ تلك الليلة، وأنا أعرف عمّا أكتب.</p>`,
       coverImage:
         "https://images.unsplash.com/photo-1539635278303-d4002c07eae3?auto=format&fit=crop&w=1600&q=80",
