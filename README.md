@@ -25,14 +25,34 @@ cd /app/frontend
 yarn install
 ```
 
-### 3. متغيّرات البيئة
+## متغيّرات البيئة
 
-أنشئ ملف `.env` في `/app/frontend` بالقيم التالية:
+### البنية
+
+| الملف | متى يُحمَّل | الاستخدام |
+| --- | --- | --- |
+| `.env` | دائماً (dev + prod) | القيم الافتراضيّة — تستخدم PostgreSQL محلّي للمعاينة |
+| `.env.production` | فقط في `next start` (الإنتاج) | قيم Supabase + الإنتاج — Vercel يقرأها تلقائيّاً |
+| `.env.local` | فقط محلّياً (dev) — gitignored | تجاوزات شخصيّة على جهازك |
+| `.env.local.example` | قالب فقط | انسخه إلى `.env.local` على جهازك للعمل مع Supabase |
+
+### المتغيّرات المطلوبة
 
 ```env
-DATABASE_URL="postgresql://USER:PASS@HOST:5432/DB?schema=public"
-JWT_SECRET="<random-64-hex>"
+# عام (يظهر للمتصفّح)
 NEXT_PUBLIC_SITE_URL="https://your-domain.com"
+NEXT_PUBLIC_SUPABASE_URL="https://YOUR_PROJECT.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="sb_publishable_..."
+
+# قاعدة البيانات (خادم فقط)
+DATABASE_URL="postgresql://..."
+DIRECT_URL="postgresql://..."
+
+# أسرار (خادم فقط)
+JWT_SECRET="<random-64-hex>"
+NEXTAUTH_SECRET="<random-64-hex>"
+
+# مصادقة المسؤول (للـ seed فقط)
 ADMIN_EMAIL="admin@site.com"
 ADMIN_PASSWORD="123456"
 
@@ -41,10 +61,20 @@ TELEGRAM_BOT_TOKEN=""
 TELEGRAM_ADMIN_ID=""
 ENABLE_AI_CONTENT="false"
 ENABLE_DIRECT_PUBLISH="false"
-SUPABASE_URL=""
-SUPABASE_SERVICE_ROLE_KEY=""
 SUPABASE_STORAGE_BUCKET="media"
+SUPABASE_SERVICE_ROLE_KEY=""
 ```
+
+### قاعدة الأمان
+- المتغيّرات المسبوقة بـ `NEXT_PUBLIC_` فقط هي التي تَصل إلى المتصفّح.
+- باقي الأسرار (DATABASE_URL، JWT_SECRET، SUPABASE_SERVICE_ROLE_KEY...) خادم-فقط ولن تظهر في كود JavaScript.
+
+### ملاحظة: Supabase + IPv6
+مشاريع Supabase الحديثة تَعرض المضيف المباشر `db.PROJECT.supabase.co` عبر IPv6 فقط. هذا يعمل على معظم منصّات النشر (Vercel، Railway) لكن قد لا يعمل في البيئات القديمة. الحلّ: استخدم Supabase Pooler:
+```
+postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres
+```
+المنطقة موجودة في: Supabase Dashboard → Project Settings → Database → Connection Pooling.
 
 ### 4. قاعدة البيانات
 

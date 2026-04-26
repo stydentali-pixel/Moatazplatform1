@@ -1,0 +1,41 @@
+{
+  "summary": "Regression pass after env restructure (.env=local Postgres for preview, .env.production=Supabase, schema directUrl, storage.ts reads NEXT_PUBLIC_SUPABASE_URL). Backend pytest suite 45/45 PASS in 14.4s. Seed verified: 3 posts, 5 categories, 5 tags, 3 ideas, admin@site.com works. Public pages all 200 (/, /posts, /categories, /tags, /search, /about, /contact). Admin login UI renders cleanly (no build overlay), login → /admin succeeds, posts list page renders Arabic RTL with 4 rows (3 seeded + 1 leftover TEST_فكرة_716536). Direct-publish guard (ENABLE_DIRECT_PUBLISH=false → 400), inline media fallback (no Supabase service key), and subscribe acceptance all confirmed via the pytest suite. Nothing broke from the env refactor.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/public/subscribe", "issue": "Invalid email returns HTTP 200 with {success:true, data:{subscribed:false}} instead of 400/422 (carry-over from iteration_1; design choice)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Search deep-link", "issue": "Carry-over from iteration_2: /search?q=... does not pre-fill the input nor auto-run the query.", "affected_selectors": ["/search?q=..."]}
+    ],
+    "design_issues": [
+      {"screen": "Admin posts list", "issues": ["Leftover TEST_فكرة_716536 row still present from prior automated test runs — recommend cleanup pass before production handoff."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_moataz_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Hygiene) Clean leftover TEST_-prefixed records (e.g., post 'TEST_فكرة_716536' and any TEST_ ideas/categories/tags) before production deploy.",
+    "(Minor / from prior iterations, unresolved) Make /search?q=... pre-populate the input and auto-run the query on first paint.",
+    "(Optional / from iteration_1) Return 400 for invalid email on /api/public/subscribe for REST consistency."
+  ],
+  "critical_code_review_comments": [
+    "Env refactor is correct: .env (local Postgres) keeps preview working in the IPv6-less container; .env.production (Supabase) is loaded by `next start` for Vercel — no leakage between environments. prisma/schema.prisma now uses directUrl=DIRECT_URL so `prisma migrate deploy` will work against Supabase pooled connections in prod.",
+    "src/lib/storage.ts correctly reads NEXT_PUBLIC_SUPABASE_URL || SUPABASE_URL — keeps inline fallback active when SUPABASE_SERVICE_ROLE_KEY is empty (verified by test_upload_falls_back_to_inline).",
+    "Note: .env still contains JWT_SECRET / NEXTAUTH_SECRET / ADMIN_PASSWORD in plaintext — fine for the preview container, but document clearly that .env.production secrets must be moved to the hosting dashboard before going public.",
+    "NEXT_PUBLIC_SITE_URL='http://localhost:3000' in .env.production is wrong for any real production deploy (will break absolute-URL OG tags / canonical links). Set the actual public URL during Vercel deploy."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (45/45)", "frontend": "100% on the smoke path executed (login + posts list); deep admin CRUD UI not re-tested per main-agent instruction"},
+  "test_credentials": "admin@site.com / 123456 (verified via API + UI)",
+  "seed_data_creation": "No new test data created in this iteration. One leftover TEST_فكرة_716536 from earlier runs remains in DB.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Env restructure regression: PASS. Backend 45/45, login UI works, public pages 200. Backend regression suite: /app/backend/tests/test_moataz_api.py — keep using as smoke. External URL: https://1c8dda95-f3d4-49df-9b80-138e3c1475c5.preview.emergentagent.com. Open follow-ups carried over from previous iterations (search deep-link UX, subscribe invalid-email status code, NEXT_PUBLIC_SITE_URL in .env.production, leftover TEST_ records).",
+  "rca_of_the_issue": "N/A — no new bugs found. Env refactor verified safe: preview container reads .env (local Postgres) and all code paths that previously hit Supabase direct DB now resolve to localhost:5432, eliminating the IPv6 outage. Production behavior (.env.production with Supabase) is not exercisable from this preview but the file is structurally correct."
+}
