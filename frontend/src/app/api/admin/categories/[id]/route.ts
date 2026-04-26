@@ -5,6 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { ok, fail, readJson } from "@/lib/api";
 import { uniqueCategorySlug } from "@/lib/slug";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const Schema = z.object({
   name: z.string().optional(),
   slug: z.string().optional(),

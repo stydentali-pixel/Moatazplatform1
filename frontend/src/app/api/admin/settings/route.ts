@@ -4,6 +4,10 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ok, fail, readJson } from "@/lib/api";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const Schema = z.object({ settings: z.record(z.string(), z.string()) });
 
 export async function GET() {

@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { ok, fail, readJson } from "@/lib/api";
 import { uniquePostSlug, readingTimeMinutes } from "@/lib/slug";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * Convert an idea into a Post (draft) once the admin approves it.
  * AI generation is gated behind ENABLE_AI_CONTENT — for now we generate

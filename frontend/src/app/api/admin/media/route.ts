@@ -5,6 +5,8 @@ import { ok, fail } from "@/lib/api";
 import { uploadFile } from "@/lib/storage";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   const user = await requireAdmin();

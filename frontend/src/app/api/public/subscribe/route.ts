@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { ok } from "@/lib/api";
 import { z } from "zod";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const Schema = z.object({ email: z.string().email() });
 
 export async function POST(req: NextRequest) {

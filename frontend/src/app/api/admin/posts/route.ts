@@ -5,6 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { ok, fail, readJson } from "@/lib/api";
 import { uniquePostSlug, readingTimeMinutes } from "@/lib/slug";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const PostSchema = z.object({
   title: z.string().min(1, "العنوان مطلوب"),
   slug: z.string().optional(),

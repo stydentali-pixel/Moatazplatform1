@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword, signToken, setAuthCookie } from "@/lib/auth";
 import { ok, fail, readJson } from "@/lib/api";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const Schema = z.object({
   email: z.string().email("بريد إلكتروني غير صحيح"),
   password: z.string().min(1, "كلمة المرور مطلوبة"),
