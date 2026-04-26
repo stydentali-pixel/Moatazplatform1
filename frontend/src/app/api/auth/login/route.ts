@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const valid = await verifyPassword(parsed.data.password, user.passwordHash);
   if (!valid) return fail("بيانات الدخول غير صحيحة", 401);
 
-  const token = signToken({ sub: user.id, email: user.email, role: user.role });
+  const token = signToken({ sub: user.id, email: user.email, role: user.role, name: user.name });
   setAuthCookie(token);
 
   return ok({

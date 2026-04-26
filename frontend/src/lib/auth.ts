@@ -26,6 +26,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   role: string;
+  name?: string;
 }
 
 export function signToken(payload: JwtPayload): string {
@@ -67,11 +68,18 @@ export async function getCurrentUser() {
   if (!token) return null;
   const payload = verifyToken(token);
   if (!payload) return null;
-  const user = await prisma.user.findUnique({
-    where: { id: payload.sub },
-    select: { id: true, email: true, name: true, role: true, bio: true, avatar: true },
-  });
-  return user;
+
+  // The login endpoint validates the user against the database before issuing this signed token.
+  // Reading the signed payload here avoids an extra Prisma query on every admin page render,
+  // which is important on Vercel + Supabase pooler.
+  return {
+    id: payload.sub,
+    email: payload.email,
+    name: payload.name || payload.email,
+    role: payload.role,
+    bio: null,
+    avatar: null,
+  };
 }
 
 export async function requireAdmin() {

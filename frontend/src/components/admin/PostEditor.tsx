@@ -120,13 +120,13 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
   const TYPE_AR: Record<string, string> = { ARTICLE: "مقال", STORY: "قصة", LINK: "رابط", IMAGE: "صورة", VIDEO: "فيديو", QUOTE: "اقتباس" };
 
   return (
-    <div className="max-w-6xl">
-      <div className="flex items-center justify-between mb-8">
+    <div className="w-full">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <Link href="/admin/posts" className="text-sm text-ink-500 hover:text-gold-700">→ العودة للقائمة</Link>
           <h1 className="font-cairo text-3xl font-extrabold text-ink-900 mt-2">{postId ? "تعديل مقال" : "مقال جديد"}</h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={() => save("DRAFT")} disabled={saving} className="btn-ghost text-sm py-2 px-4" data-testid="save-draft-btn">حفظ كمسوّدة</button>
           <button onClick={() => save("PUBLISHED")} disabled={saving} className="btn-gold text-sm py-2 px-4" data-testid="publish-btn">نشر</button>
         </div>
@@ -134,7 +134,7 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
 
       {error ? <div className="mb-6 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3" data-testid="editor-error">{error}</div> : null}
 
-      <div className="grid lg:grid-cols-[1fr,340px] gap-8">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),340px] lg:gap-8">
         {/* Main editor */}
         <div className="space-y-6">
           <div className="card p-6">
@@ -142,7 +142,7 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
               value={data.title}
               onChange={(e) => update("title", e.target.value)}
               placeholder="عنوان المقال…"
-              className="w-full text-3xl font-cairo font-extrabold text-ink-900 placeholder:text-ink-300 focus:outline-none bg-transparent"
+              className="w-full bg-transparent font-cairo text-2xl font-extrabold text-ink-900 placeholder:text-ink-300 focus:outline-none sm:text-3xl"
               data-testid="editor-title-input"
             />
             <textarea
@@ -201,7 +201,7 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
               contentEditable
               onInput={(e) => update("content", (e.currentTarget as HTMLDivElement).innerHTML)}
               suppressContentEditableWarning
-              className="prose-rtl min-h-[400px] focus:outline-none"
+              className="prose-rtl min-h-[280px] max-w-none overflow-x-auto focus:outline-none sm:min-h-[400px]"
               data-testid="editor-content"
             />
           </div>

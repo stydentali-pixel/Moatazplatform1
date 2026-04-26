@@ -98,3 +98,17 @@
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gold-deep); }
+
+/* Production hardening: keep admin tables and forms usable on small screens. */
+@media (max-width: 767px) {
+  .card:has(table) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .card table {
+    min-width: 680px;
+  }
+  input, textarea, select, button {
+    max-width: 100%;
+  }
+}

@@ -30,79 +30,89 @@ export async function GET(req: NextRequest) {
   const user = await requireAdmin();
   if (!user) return fail("غير مصرح", 401);
 
-  const { searchParams } = new URL(req.url);
-  const status = searchParams.get("status");
-  const type = searchParams.get("type");
-  const q = searchParams.get("q") || "";
-  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-  const limit = Math.min(100, parseInt(searchParams.get("limit") || "20", 10));
+  try {
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get("status");
+    const type = searchParams.get("type");
+    const q = searchParams.get("q") || "";
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(50, parseInt(searchParams.get("limit") || "20", 10));
 
-  const where: any = {};
-  if (status) where.status = status;
-  if (type) where.type = type;
-  if (q) where.title = { contains: q, mode: "insensitive" };
+    const where: any = {};
+    if (status) where.status = status;
+    if (type) where.type = type;
+    if (q) where.title = { contains: q, mode: "insensitive" };
 
-  const [items, total] = await Promise.all([
-    prisma.post.findMany({
-      where,
-      orderBy: { updatedAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-      include: {
-        author: { select: { name: true } },
-        category: { select: { name: true, slug: true } },
-        tags: { include: { tag: true } },
-      },
-    }),
-    prisma.post.count({ where }),
-  ]);
+    const [items, total] = await Promise.all([
+      prisma.post.findMany({
+        where,
+        orderBy: { updatedAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          type: true,
+          status: true,
+          featured: true,
+          updatedAt: true,
+          category: { select: { name: true, slug: true } },
+        },
+      }),
+      prisma.post.count({ where }),
+    ]);
 
-  return ok({
-    items: items.map((p) => ({ ...p, tags: p.tags.map((pt) => pt.tag) })),
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
-  });
+    return ok({ items, total, page, limit, totalPages: Math.ceil(total / limit) });
+  } catch (error) {
+    console.error("Admin posts list error", error);
+    return fail("تعذر تحميل المقالات الآن", 503);
+  }
 }
 
 export async function POST(req: NextRequest) {
   const user = await requireAdmin();
   if (!user) return fail("غير مصرح", 401);
 
-  const body = await readJson(req);
-  const parsed = PostSchema.safeParse(body);
-  if (!parsed.success) return fail(parsed.error.errors[0]?.message || "بيانات غير صحيحة", 400);
-  const d = parsed.data;
+  try {
+    const body = await readJson(req);
+    const parsed = PostSchema.safeParse(body);
+    if (!parsed.success) return fail(parsed.error.errors[0]?.message || "بيانات غير صحيحة", 400);
+    const d = parsed.data;
 
-  const slug = d.slug?.trim() || (await uniquePostSlug(d.title));
-  const existing = await prisma.post.findUnique({ where: { slug } });
-  if (existing) return fail("الرابط مستخدم بالفعل", 400);
+    const slug = d.slug?.trim() || (await uniquePostSlug(d.title));
+    const existing = await prisma.post.findUnique({ where: { slug } });
+    if (existing) return fail("الرابط مستخدم بالفعل", 400);
 
-  const publishedAt = d.status === "PUBLISHED" ? new Date() : null;
-  const scheduledAt = d.scheduledAt ? new Date(d.scheduledAt) : null;
+    const publishedAt = d.status === "PUBLISHED" ? new Date() : null;
+    const scheduledAt = d.scheduledAt ? new Date(d.scheduledAt) : null;
 
-  const post = await prisma.post.create({
-    data: {
-      title: d.title,
-      slug,
-      excerpt: d.excerpt || null,
-      content: d.content || "",
-      coverImage: d.coverImage || null,
-      type: d.type,
-      status: d.status,
-      featured: d.featured,
-      readingTime: readingTimeMinutes(d.content || ""),
-      seoTitle: d.seoTitle || d.title,
-      seoDescription: d.seoDescription || d.excerpt || null,
-      canonicalUrl: d.canonicalUrl || null,
-      publishedAt,
-      scheduledAt,
-      authorId: user.id,
-      categoryId: d.categoryId || null,
-      tags: { create: (d.tagIds || []).map((tagId) => ({ tagId })) },
-    },
-  });
+    const post = await prisma.post.create({
+      data: {
+        title: d.title,
+        slug,
+        excerpt: d.excerpt || null,
+        content: d.content || "",
+        coverImage: d.coverImage || null,
+        type: d.type,
+        status: d.status,
+        featured: d.featured,
+        readingTime: readingTimeMinutes(d.content || ""),
+        seoTitle: d.seoTitle || d.title,
+        seoDescription: d.seoDescription || d.excerpt || null,
+        canonicalUrl: d.canonicalUrl || null,
+        publishedAt,
+        scheduledAt,
+        authorId: user.id,
+        categoryId: d.categoryId || null,
+        tags: { create: (d.tagIds || []).map((tagId) => ({ tagId })) },
+      },
+    });
 
-  return ok(post);
+    return ok(post);
+  } catch (error: any) {
+    console.error("Admin post create error", error);
+    if (error?.code === "P2002") return fail("الرابط مستخدم بالفعل", 400);
+    return fail("تعذر حفظ المقال الآن", 503);
+  }
 }

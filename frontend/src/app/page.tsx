@@ -8,40 +8,44 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [featured, latest, categories, settings] = await Promise.all([
-    prisma.post.findMany({
-      where: { status: "PUBLISHED", featured: true },
-      orderBy: { publishedAt: "desc" },
-      take: 3,
-      include: { category: true, author: { select: { name: true } } },
-    }),
-    prisma.post.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy: { publishedAt: "desc" },
-      take: 6,
-      include: { category: true, author: { select: { name: true } } },
-    }),
-    prisma.category.findMany({
-      orderBy: { name: "asc" },
-      include: { _count: { select: { posts: { where: { status: "PUBLISHED" } } } } },
-    }),
-    prisma.setting.findMany(),
-  ]);
+  let featured: any[] = [];
+  let latest: any[] = [];
+  let categories: any[] = [];
+  let settings: any[] = [];
+
+  try {
+    [featured, latest, categories, settings] = await Promise.all([
+      prisma.post.findMany({
+        where: { status: "PUBLISHED", featured: true },
+        orderBy: { publishedAt: "desc" },
+        take: 3,
+        select: { id: true, title: true, slug: true, excerpt: true, coverImage: true, type: true, status: true, featured: true, views: true, readingTime: true, publishedAt: true, createdAt: true, category: { select: { name: true, slug: true } }, author: { select: { name: true } } },
+      }),
+      prisma.post.findMany({
+        where: { status: "PUBLISHED" },
+        orderBy: { publishedAt: "desc" },
+        take: 9,
+        select: { id: true, title: true, slug: true, excerpt: true, coverImage: true, type: true, status: true, featured: true, views: true, readingTime: true, publishedAt: true, createdAt: true, category: { select: { name: true, slug: true } }, author: { select: { name: true } } },
+      }),
+      prisma.category.findMany({
+        orderBy: { name: "asc" },
+        take: 10,
+        include: { _count: { select: { posts: { where: { status: "PUBLISHED" } } } } },
+      }),
+      prisma.setting.findMany(),
+    ]);
+  } catch (error) {
+    console.error("Home page data error", error);
+  }
 
   const settingsMap: Record<string, string> = {};
   for (const s of settings) settingsMap[s.key] = s.value;
 
   const heroPost = featured[0] || latest[0];
-  const sidePosts = featured.slice(1, 3).length ? featured.slice(1, 3) : latest.slice(0, 2);
 
-  // type sections
+  // type sections from the already fetched latest posts to reduce database load
   const articles = latest.filter((p) => p.type === "ARTICLE").slice(0, 3);
-  const stories = await prisma.post.findMany({
-    where: { status: "PUBLISHED", type: "STORY" },
-    take: 3,
-    orderBy: { publishedAt: "desc" },
-    include: { category: true },
-  });
+  const stories = latest.filter((p) => p.type === "STORY").slice(0, 3);
 
   return (
     <>
