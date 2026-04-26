@@ -1,7 +1,4 @@
 {
   "/page": "app/page.js",
-  "/admin/(authed)/categories/page": "app/admin/(authed)/categories/page.js",
-  "/admin/(authed)/posts/new/page": "app/admin/(authed)/posts/new/page.js",
-  "/admin/(authed)/settings/page": "app/admin/(authed)/settings/page.js",
-  "/admin/(authed)/media/page": "app/admin/(authed)/media/page.js"
+  "/api/public/posts/route": "app/api/public/posts/route.js"
 }
