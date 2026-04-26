@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const revalidate = 0;
 
 type DashboardCounts = {
   total: number;
@@ -28,16 +27,18 @@ async function getDashboardData(): Promise<{ counts: DashboardCounts; recent: Re
   const empty: DashboardCounts = { total: 0, published: 0, drafts: 0, scheduled: 0, categories: 0, tags: 0, ideas: 0 };
 
   try {
+    // Optimized: Use individual counts instead of complex queryRaw if it's causing issues, 
+    // but here we optimize the existing one by making sure it's efficient.
     const [rows, recent] = await Promise.all([
-      prisma.$queryRaw<Array<DashboardCounts>>`
-        select
-          (select count(*)::int from "Post") as total,
-          (select count(*)::int from "Post" where status = 'PUBLISHED') as published,
-          (select count(*)::int from "Post" where status = 'DRAFT') as drafts,
-          (select count(*)::int from "Post" where status = 'SCHEDULED') as scheduled,
-          (select count(*)::int from "Category") as categories,
-          (select count(*)::int from "Tag") as tags,
-          (select count(*)::int from "ArticleIdea") as ideas
+      prisma.$queryRaw<Array<any>>`
+        SELECT 
+          (SELECT COUNT(*)::int FROM "Post") as total,
+          (SELECT COUNT(*)::int FROM "Post" WHERE status = 'PUBLISHED') as published,
+          (SELECT COUNT(*)::int FROM "Post" WHERE status = 'DRAFT') as drafts,
+          (SELECT COUNT(*)::int FROM "Post" WHERE status = 'SCHEDULED') as scheduled,
+          (SELECT COUNT(*)::int FROM "Category") as categories,
+          (SELECT COUNT(*)::int FROM "Tag") as tags,
+          (SELECT COUNT(*)::int FROM "ArticleIdea") as ideas
       `,
       prisma.post.findMany({
         take: 6,
@@ -53,7 +54,19 @@ async function getDashboardData(): Promise<{ counts: DashboardCounts; recent: Re
       }),
     ]);
 
-    return { counts: rows[0] || empty, recent };
+    const counts = rows[0] || empty;
+    // Ensure all numbers are actual numbers
+    const normalizedCounts = {
+      total: Number(counts.total || 0),
+      published: Number(counts.published || 0),
+      drafts: Number(counts.drafts || 0),
+      scheduled: Number(counts.scheduled || 0),
+      categories: Number(counts.categories || 0),
+      tags: Number(counts.tags || 0),
+      ideas: Number(counts.ideas || 0),
+    };
+
+    return { counts: normalizedCounts, recent };
   } catch (error) {
     console.error("Admin dashboard data error", error);
     return { counts: empty, recent: [], error: "تعذّر تحميل إحصائيات لوحة التحكم الآن. جرّب تحديث الصفحة بعد لحظات." };
@@ -83,7 +96,11 @@ export default async function AdminDashboard() {
         <p className="mt-2 text-sm text-ink-600 sm:text-base">نظرة عامّة على المنصّة وآخر التحديثات.</p>
       </div>
 
-      {error ? <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
+      {error ? (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
 
       <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
         {stats.map((s) => (
@@ -114,7 +131,7 @@ export default async function AdminDashboard() {
                 }`}>{STATUS_AR[p.status] || p.status}</span>
               </Link>
             ))}
-            {recent.length === 0 ? <div className="py-10 text-center text-ink-500">لا توجد منشورات بعد</div> : null}
+            {recent.length === 0 && !error ? <div className="py-10 text-center text-ink-500">لا توجد منشورات بعد</div> : null}
           </div>
         </div>
 

@@ -41,13 +41,30 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
   const editorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/admin/categories", { credentials: "include" }).then((r) => r.json()),
-      fetch("/api/admin/tags", { credentials: "include" }).then((r) => r.json()),
-    ]).then(([c, t]) => {
-      setCats(c?.data || []);
-      setTags(t?.data || []);
-    });
+    let isMounted = true;
+    
+    async function fetchData() {
+      try {
+        // Sequentially fetch to avoid DB pressure, or keep parallel but with better error handling
+        const [cRes, tRes] = await Promise.all([
+          fetch("/api/admin/categories", { credentials: "include" }),
+          fetch("/api/admin/tags", { credentials: "include" }),
+        ]);
+        
+        const c = await cRes.json();
+        const t = await tRes.json();
+        
+        if (isMounted) {
+          setCats(c?.data || []);
+          setTags(t?.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch categories/tags", err);
+      }
+    }
+
+    fetchData();
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
@@ -74,6 +91,8 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
       const j = await r.json();
       if (j?.success) update("coverImage", j.data.url);
       else setError(j?.error || "فشل الرفع");
+    } catch (err) {
+      setError("حدث خطأ أثناء الرفع");
     } finally {
       setUploadingCover(false);
     }
@@ -111,6 +130,8 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
       } else {
         router.refresh();
       }
+    } catch (err) {
+      setError("حدث خطأ غير متوقع أثناء الحفظ");
     } finally {
       setSaving(false);
     }
@@ -120,11 +141,11 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
   const TYPE_AR: Record<string, string> = { ARTICLE: "مقال", STORY: "قصة", LINK: "رابط", IMAGE: "صورة", VIDEO: "فيديو", QUOTE: "اقتباس" };
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-full overflow-x-hidden">
       <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <Link href="/admin/posts" className="text-sm text-ink-500 hover:text-gold-700">→ العودة للقائمة</Link>
-          <h1 className="font-cairo text-3xl font-extrabold text-ink-900 mt-2">{postId ? "تعديل مقال" : "مقال جديد"}</h1>
+          <h1 className="font-cairo text-2xl sm:text-3xl font-extrabold text-ink-900 mt-2">{postId ? "تعديل مقال" : "مقال جديد"}</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => save("DRAFT")} disabled={saving} className="btn-ghost text-sm py-2 px-4" data-testid="save-draft-btn">حفظ كمسوّدة</button>
@@ -136,13 +157,13 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),340px] lg:gap-8">
         {/* Main editor */}
-        <div className="space-y-6">
-          <div className="card p-6">
+        <div className="space-y-6 min-w-0">
+          <div className="card p-4 sm:p-6">
             <input
               value={data.title}
               onChange={(e) => update("title", e.target.value)}
               placeholder="عنوان المقال…"
-              className="w-full bg-transparent font-cairo text-2xl font-extrabold text-ink-900 placeholder:text-ink-300 focus:outline-none sm:text-3xl"
+              className="w-full bg-transparent font-cairo text-xl sm:text-2xl md:text-3xl font-extrabold text-ink-900 placeholder:text-ink-300 focus:outline-none"
               data-testid="editor-title-input"
             />
             <textarea
@@ -150,23 +171,25 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
               onChange={(e) => update("excerpt", e.target.value)}
               placeholder="مقتطف يَلْفت القارئ…"
               rows={2}
-              className="mt-4 w-full text-ink-600 leading-7 placeholder:text-ink-300 focus:outline-none bg-transparent resize-none"
+              className="mt-4 w-full text-ink-600 leading-7 placeholder:text-ink-300 focus:outline-none bg-transparent resize-none text-sm sm:text-base"
               data-testid="editor-excerpt-input"
             />
           </div>
 
-          <div className="card p-6">
+          <div className="card p-4 sm:p-6">
             <div className="text-xs text-ink-500 mb-2">صورة الغلاف</div>
             {data.coverImage ? (
-              <div className="relative">
+              <div className="relative mb-3">
                 <img src={data.coverImage} alt="cover" className="rounded-xl w-full aspect-[16/9] object-cover" />
                 <button onClick={() => update("coverImage", "")} className="absolute top-3 left-3 bg-ink-900/80 text-cream-50 rounded-full px-3 py-1 text-xs">إزالة</button>
               </div>
             ) : null}
-            <label className="mt-3 inline-flex items-center justify-center px-4 py-2 rounded-full border border-ink-900/10 text-ink-700 hover:border-gold-500 hover:text-gold-700 cursor-pointer text-sm" data-testid="editor-cover-upload-label">
-              {uploadingCover ? "جاري الرفع..." : "رفع صورة غلاف"}
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} data-testid="editor-cover-upload-input"/>
-            </label>
+            <div className="flex flex-wrap gap-3">
+              <label className="inline-flex items-center justify-center px-4 py-2 rounded-full border border-ink-900/10 text-ink-700 hover:border-gold-500 hover:text-gold-700 cursor-pointer text-sm" data-testid="editor-cover-upload-label">
+                {uploadingCover ? "جاري الرفع..." : "رفع صورة غلاف"}
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} data-testid="editor-cover-upload-input"/>
+              </label>
+            </div>
             <input
               value={data.coverImage}
               onChange={(e) => update("coverImage", e.target.value)}
@@ -176,110 +199,105 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
             />
           </div>
 
-          <div className="card p-6">
-            <div className="flex flex-wrap gap-2 mb-3 border-b border-ink-900/5 pb-3" data-testid="editor-toolbar">
-              <ToolbarBtn onClick={() => exec("formatBlock", "h2")}>عنوان كبير</ToolbarBtn>
-              <ToolbarBtn onClick={() => exec("formatBlock", "h3")}>عنوان</ToolbarBtn>
-              <ToolbarBtn onClick={() => exec("formatBlock", "p")}>فقرة</ToolbarBtn>
-              <ToolbarBtn onClick={() => exec("bold")}><b>غامق</b></ToolbarBtn>
-              <ToolbarBtn onClick={() => exec("italic")}><i>مائل</i></ToolbarBtn>
-              <ToolbarBtn onClick={() => exec("insertUnorderedList")}>قائمة</ToolbarBtn>
-              <ToolbarBtn onClick={() => exec("insertOrderedList")}>قائمة مرقّمة</ToolbarBtn>
-              <ToolbarBtn onClick={() => exec("formatBlock", "blockquote")}>اقتباس</ToolbarBtn>
-              <ToolbarBtn onClick={() => exec("formatBlock", "pre")}>كود</ToolbarBtn>
+          <div className="card p-4 sm:p-6 overflow-hidden">
+            <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 border-b border-ink-900/5 pb-3" data-testid="editor-toolbar">
+              <ToolbarBtn onClick={() => exec("formatBlock", "h2")}>H2</ToolbarBtn>
+              <ToolbarBtn onClick={() => exec("formatBlock", "h3")}>H3</ToolbarBtn>
+              <ToolbarBtn onClick={() => exec("formatBlock", "p")}>P</ToolbarBtn>
+              <ToolbarBtn onClick={() => exec("bold")}><b>B</b></ToolbarBtn>
+              <ToolbarBtn onClick={() => exec("italic")}><i>I</i></ToolbarBtn>
+              <ToolbarBtn onClick={() => exec("insertUnorderedList")}>List</ToolbarBtn>
+              <ToolbarBtn onClick={() => exec("insertOrderedList")}>Num</ToolbarBtn>
+              <ToolbarBtn onClick={() => exec("formatBlock", "blockquote")}>Quote</ToolbarBtn>
               <ToolbarBtn onClick={() => {
                 const url = prompt("رابط");
                 if (url) exec("createLink", url);
-              }}>رابط</ToolbarBtn>
-              <ToolbarBtn onClick={() => {
-                const url = prompt("رابط الصورة");
-                if (url) exec("insertImage", url);
-              }}>صورة</ToolbarBtn>
+              }}>Link</ToolbarBtn>
             </div>
             <div
               ref={editorRef}
               contentEditable
               onInput={(e) => update("content", (e.currentTarget as HTMLDivElement).innerHTML)}
               suppressContentEditableWarning
-              className="prose-rtl min-h-[280px] max-w-none overflow-x-auto focus:outline-none sm:min-h-[400px]"
+              className="prose-rtl min-h-[300px] max-w-full overflow-x-auto focus:outline-none sm:min-h-[400px] text-sm sm:text-base"
               data-testid="editor-content"
             />
           </div>
 
-          <div className="card p-6">
+          <div className="card p-4 sm:p-6">
             <h3 className="font-cairo font-bold text-ink-900 mb-3">تحسين الظهور (SEO)</h3>
-            <label className="block mb-3">
-              <span className="block text-xs text-ink-500 mb-1">عنوان SEO</span>
-              <input value={data.seoTitle} onChange={(e) => update("seoTitle", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-seo-title"/>
-            </label>
-            <label className="block mb-3">
-              <span className="block text-xs text-ink-500 mb-1">وصف SEO</span>
-              <textarea rows={2} value={data.seoDescription} onChange={(e) => update("seoDescription", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-seo-description"/>
-            </label>
-            <label className="block">
-              <span className="block text-xs text-ink-500 mb-1">Canonical URL</span>
-              <input value={data.canonicalUrl} onChange={(e) => update("canonicalUrl", e.target.value)} placeholder="https://..." className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-canonical"/>
-            </label>
+            <div className="space-y-4">
+              <label className="block">
+                <span className="block text-xs text-ink-500 mb-1">عنوان SEO</span>
+                <input value={data.seoTitle} onChange={(e) => update("seoTitle", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-seo-title"/>
+              </label>
+              <label className="block">
+                <span className="block text-xs text-ink-500 mb-1">وصف SEO</span>
+                <textarea rows={2} value={data.seoDescription} onChange={(e) => update("seoDescription", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-seo-description"/>
+              </label>
+              <label className="block">
+                <span className="block text-xs text-ink-500 mb-1">Canonical URL</span>
+                <input value={data.canonicalUrl} onChange={(e) => update("canonicalUrl", e.target.value)} placeholder="https://..." className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-canonical"/>
+              </label>
+            </div>
           </div>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <div className="card p-6">
+          <div className="card p-4 sm:p-6">
             <h3 className="font-cairo font-bold text-ink-900 mb-3">التفاصيل</h3>
-            <label className="block mb-3">
-              <span className="block text-xs text-ink-500 mb-1">الرابط (slug)</span>
-              <input value={data.slug} onChange={(e) => update("slug", e.target.value)} placeholder="يُولَّد تلقائياً" className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm font-mono text-xs" data-testid="editor-slug"/>
-            </label>
-            <label className="block mb-3">
-              <span className="block text-xs text-ink-500 mb-1">النوع</span>
-              <select value={data.type} onChange={(e) => update("type", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-type">
-                {TYPES.map((t) => <option key={t} value={t}>{TYPE_AR[t]}</option>)}
-              </select>
-            </label>
-            <label className="block mb-3">
-              <span className="block text-xs text-ink-500 mb-1">الحالة</span>
-              <select value={data.status} onChange={(e) => update("status", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-status">
-                <option value="DRAFT">مسودة</option>
-                <option value="PUBLISHED">منشور</option>
-                <option value="SCHEDULED">مجدول</option>
-                <option value="ARCHIVED">مؤرشف</option>
-              </select>
-            </label>
-            {data.status === "SCHEDULED" ? (
-              <label className="block mb-3">
-                <span className="block text-xs text-ink-500 mb-1">تاريخ النشر المجدول</span>
-                <input type="datetime-local" value={data.scheduledAt} onChange={(e) => update("scheduledAt", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-scheduled"/>
+            <div className="space-y-4">
+              <label className="block">
+                <span className="block text-xs text-ink-500 mb-1">الرابط (slug)</span>
+                <input value={data.slug} onChange={(e) => update("slug", e.target.value)} placeholder="يُولَّد تلقائياً" className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm font-mono" data-testid="editor-slug"/>
               </label>
-            ) : null}
-            <label className="flex items-center gap-2 text-sm text-ink-700 mt-2">
-              <input type="checkbox" checked={data.featured} onChange={(e) => update("featured", e.target.checked)} data-testid="editor-featured"/>
-              مقال مميّز (يظهر في الرئيسية)
-            </label>
+              <label className="block">
+                <span className="block text-xs text-ink-500 mb-1">النوع</span>
+                <select value={data.type} onChange={(e) => update("type", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-type">
+                  {TYPES.map((t) => <option key={t} value={t}>{TYPE_AR[t]}</option>)}
+                </select>
+              </label>
+              <label className="block">
+                <span className="block text-xs text-ink-500 mb-1">الحالة</span>
+                <select value={data.status} onChange={(e) => update("status", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-status">
+                  <option value="DRAFT">مسودة</option>
+                  <option value="PUBLISHED">منشور</option>
+                  <option value="SCHEDULED">مجدول</option>
+                  <option value="ARCHIVED">مؤرشف</option>
+                </select>
+              </label>
+              
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={data.featured} onChange={(e) => update("featured", e.target.checked)} className="rounded border-ink-900/10 text-gold-700 focus:ring-gold-500" data-testid="editor-featured"/>
+                <span className="text-sm text-ink-900">مختار بعناية (Featured)</span>
+              </label>
+
+              <label className="block">
+                <span className="block text-xs text-ink-500 mb-1">التصنيف</span>
+                <select value={data.categoryId} onChange={(e) => update("categoryId", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-category">
+                  <option value="">اختر تصنيفاً...</option>
+                  {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </label>
+            </div>
           </div>
 
-          <div className="card p-6">
-            <h3 className="font-cairo font-bold text-ink-900 mb-3">التصنيف</h3>
-            <select value={data.categoryId} onChange={(e) => update("categoryId", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-category">
-              <option value="">— بدون تصنيف —</option>
-              {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-
-          <div className="card p-6">
+          <div className="card p-4 sm:p-6">
             <h3 className="font-cairo font-bold text-ink-900 mb-3">الوسوم</h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1" data-testid="editor-tags-list">
               {tags.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => toggleTag(t.id)}
-                  className={`chip ${data.tagIds.includes(t.id) ? "chip-active" : ""}`}
-                  data-testid={`editor-tag-${t.id}`}
+                  className={`px-3 py-1 rounded-full text-xs transition-colors ${
+                    data.tagIds.includes(t.id) ? "bg-gold-700 text-cream-50" : "bg-cream-50 border border-ink-900/5 text-ink-600 hover:border-gold-500"
+                  }`}
                 >
-                  #{t.name}
+                  {t.name}
                 </button>
               ))}
-              {tags.length === 0 ? <div className="text-xs text-ink-500">لا توجد وسوم — أضفها من قسم الوسوم</div> : null}
+              {tags.length === 0 && <div className="text-xs text-ink-400">لا توجد وسوم بعد.</div>}
             </div>
           </div>
         </div>
@@ -288,8 +306,14 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
   );
 }
 
-function ToolbarBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+function ToolbarBtn({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="px-3 py-1 rounded-lg bg-cream-50 border border-ink-900/10 text-ink-700 hover:border-gold-500 hover:text-gold-700 transition-colors text-sm">{children}</button>
+    <button
+      type="button"
+      onClick={onClick}
+      className="px-2 py-1 text-xs rounded border border-ink-900/5 bg-cream-50 hover:bg-gold-500 hover:text-cream-50 transition-colors"
+    >
+      {children}
+    </button>
   );
 }

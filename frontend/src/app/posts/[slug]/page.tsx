@@ -6,7 +6,7 @@ import PostCard from "@/components/PostCard";
 import { prisma } from "@/lib/prisma";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // 1 hour
 
 const TYPE_LABELS: Record<string, string> = {
   ARTICLE: "مقال",
@@ -18,8 +18,13 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const post = await prisma.post.findUnique({ where: { slug: params.slug } });
+  const post = await prisma.post.findUnique({ 
+    where: { slug: params.slug },
+    select: { title: true, seoTitle: true, excerpt: true, seoDescription: true, coverImage: true, canonicalUrl: true }
+  });
+  
   if (!post) return { title: "غير موجود" };
+  
   return {
     title: `${post.seoTitle || post.title} — معتز العلقمي`,
     description: post.seoDescription || post.excerpt || undefined,
@@ -35,25 +40,58 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function PostPage({ params }: { params: { slug: string } }) {
-  const post = await prisma.post.findFirst({
-    where: { slug: params.slug, status: "PUBLISHED" },
-    include: {
-      author: { select: { name: true, bio: true, avatar: true, id: true } },
-      category: true,
-      tags: { include: { tag: true } },
-    },
-  });
+  let post: any = null;
+  let related: any[] = [];
+  
+  try {
+    post = await prisma.post.findFirst({
+      where: { slug: params.slug, status: "PUBLISHED" },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        excerpt: true,
+        coverImage: true,
+        publishedAt: true,
+        readingTime: true,
+        type: true,
+        categoryId: true,
+        author: { select: { name: true, bio: true, id: true } },
+        category: { select: { name: true, slug: true } },
+        tags: { select: { tag: { select: { id: true, name: true, slug: true } } } },
+      },
+    });
+
+    if (post) {
+      related = await prisma.post.findMany({
+        where: { status: "PUBLISHED", id: { not: post.id }, categoryId: post.categoryId },
+        take: 3,
+        orderBy: { publishedAt: "desc" },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          excerpt: true,
+          coverImage: true,
+          type: true,
+          status: true,
+          featured: true,
+          views: true,
+          readingTime: true,
+          publishedAt: true,
+          category: { select: { name: true, slug: true } },
+          author: { select: { name: true } }
+        },
+      });
+
+      // Background views update
+      prisma.post.update({ where: { id: post.id }, data: { views: { increment: 1 } } }).catch(() => null);
+    }
+  } catch (error) {
+    console.error("Post page error", error);
+  }
+
   if (!post) notFound();
-
-  // increment views (background)
-  prisma.post.update({ where: { id: post.id }, data: { views: { increment: 1 } } }).catch(() => null);
-
-  const related = await prisma.post.findMany({
-    where: { status: "PUBLISHED", id: { not: post.id }, categoryId: post.categoryId },
-    take: 3,
-    orderBy: { publishedAt: "desc" },
-    include: { category: true },
-  });
 
   const date = post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" }) : "";
 
@@ -94,7 +132,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
 
         {post.tags.length > 0 ? (
           <div className="mt-10 flex flex-wrap gap-2">
-            {post.tags.map((pt) => (
+            {post.tags.map((pt: any) => (
               <Link key={pt.tag.id} href={`/tags/${pt.tag.slug}`} className="chip" data-testid={`post-tag-${pt.tag.slug}`}>
                 #{pt.tag.name}
               </Link>

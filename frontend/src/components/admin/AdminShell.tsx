@@ -42,6 +42,18 @@ export default function AdminShell({ user, children }: { user: AdminUser; childr
     setOpen(false);
   }, [pathname]);
 
+  // Prevent scroll when mobile menu is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [open]);
+
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     router.push("/admin/login");
@@ -49,7 +61,7 @@ export default function AdminShell({ user, children }: { user: AdminUser; childr
   }
 
   const sidebar = (
-    <aside className="flex h-full w-72 max-w-[82vw] flex-col bg-ink-900 text-cream-50 shadow-2xl lg:shadow-none">
+    <aside className="flex h-full w-72 max-w-[85vw] flex-col bg-ink-900 text-cream-50 shadow-2xl lg:shadow-none">
       <div className="flex items-center justify-between border-b border-cream-100/10 p-5 lg:p-6">
         <Link href="/" className="flex min-w-0 items-center gap-3" data-testid="admin-home-link">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold-700">
@@ -108,15 +120,21 @@ export default function AdminShell({ user, children }: { user: AdminUser; childr
   );
 
   return (
-    <div className="min-h-screen bg-cream-100" dir="rtl">
+    <div className="min-h-screen bg-cream-100 overflow-x-hidden" dir="rtl">
+      {/* Desktop Sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:right-0 lg:z-30 lg:block">{sidebar}</div>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
-          <button className="absolute inset-0 bg-ink-900/50" onClick={() => setOpen(false)} aria-label="إغلاق القائمة" />
-          <div className="absolute inset-y-0 right-0">{sidebar}</div>
+      {/* Mobile Sidebar (Drawer) */}
+      <div 
+        className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+      >
+        <div className="absolute inset-0 bg-ink-900/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
+        <div 
+          className={`absolute inset-y-0 right-0 transform transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "translate-x-full"}`}
+        >
+          {sidebar}
         </div>
-      ) : null}
+      </div>
 
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-ink-900/10 bg-cream-50/95 px-4 py-3 backdrop-blur lg:hidden">
         <button
@@ -137,7 +155,9 @@ export default function AdminShell({ user, children }: { user: AdminUser; childr
       </header>
 
       <main className="min-w-0 px-4 py-5 sm:px-6 lg:me-72 lg:px-8 lg:py-10 xl:px-12">
-        <div className="mx-auto w-full max-w-7xl">{children}</div>
+        <div className="mx-auto w-full max-w-7xl overflow-x-hidden">
+          {children}
+        </div>
       </main>
     </div>
   );

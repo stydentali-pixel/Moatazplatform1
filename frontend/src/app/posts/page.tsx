@@ -5,7 +5,7 @@ import PostCard from "@/components/PostCard";
 import PostsFilters from "@/components/PostsFilters";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 1800; // 30 minutes
 
 export const metadata = {
   title: "المقالات — معتز العلقمي",
@@ -24,16 +24,40 @@ export default async function PostsPage({ searchParams }: { searchParams: Record
   const orderBy =
     sort === "popular" ? [{ views: "desc" as const }, { publishedAt: "desc" as const }] : [{ publishedAt: "desc" as const }];
 
-  const [items, total] = await Promise.all([
-    prisma.post.findMany({
-      where,
-      orderBy,
-      skip: (page - 1) * limit,
-      take: limit,
-      include: { category: { select: { name: true, slug: true } } },
-    }),
-    prisma.post.count({ where }),
-  ]);
+  let items: any[] = [];
+  let total = 0;
+  let errorOccurred = false;
+
+  try {
+    [items, total] = await Promise.all([
+      prisma.post.findMany({
+        where,
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          excerpt: true,
+          coverImage: true,
+          type: true,
+          status: true,
+          featured: true,
+          views: true,
+          readingTime: true,
+          publishedAt: true,
+          category: { select: { name: true, slug: true } },
+          author: { select: { name: true } }
+        },
+      }),
+      prisma.post.count({ where }),
+    ]);
+  } catch (error) {
+    console.error("Posts page data error", error);
+    errorOccurred = true;
+  }
+
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   const qs = (p: number) => {
@@ -51,19 +75,27 @@ export default async function PostsPage({ searchParams }: { searchParams: Record
         <div className="mb-10">
           <div className="text-gold-700 text-sm tracking-widest mb-2">الأرشيف</div>
           <h1 className="heading-sec">المقالات والمنشورات</h1>
-          <p className="mt-4 text-ink-600">عثرت على {total} منشور.</p>
+          {!errorOccurred && <p className="mt-4 text-ink-600">عثرت على {total} منشور.</p>}
         </div>
+        
         <PostsFilters />
+
+        {errorOccurred && (
+          <div className="mb-10 rounded-2xl bg-amber-50 border border-amber-200 p-6 text-center">
+            <p className="text-amber-800">نواجه صعوبة في تحميل القائمة كاملة حالياً. يرجى المحاولة مرة أخرى لاحقاً.</p>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map((p) => (
             <PostCard key={p.id} post={{ ...p, publishedAt: p.publishedAt as any, category: p.category }} />
           ))}
-          {items.length === 0 ? (
+          {items.length === 0 && !errorOccurred ? (
             <div className="col-span-full text-center text-ink-500 py-20">لا توجد منشورات مطابقة.</div>
           ) : null}
         </div>
 
-        {totalPages > 1 ? (
+        {!errorOccurred && totalPages > 1 ? (
           <div className="flex items-center justify-center gap-2 mt-12" data-testid="pagination">
             {Array.from({ length: totalPages }).map((_, i) => {
               const p = i + 1;

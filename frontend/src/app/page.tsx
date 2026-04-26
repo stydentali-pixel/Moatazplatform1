@@ -5,51 +5,88 @@ import PostCard from "@/components/PostCard";
 import NewsletterForm from "@/components/NewsletterForm";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
+// Use revalidate for better performance on homepage
+export const revalidate = 3600; // 1 hour
 
 export default async function HomePage() {
   let featured: any[] = [];
   let latest: any[] = [];
   let categories: any[] = [];
   let settings: any[] = [];
+  let errorOccurred = false;
 
   try {
-    [featured, latest, categories, settings] = await Promise.all([
+    // 1. Fetch settings and categories first (smaller queries)
+    [categories, settings] = await Promise.all([
+      prisma.category.findMany({
+        orderBy: { name: "asc" },
+        take: 10,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          _count: {
+            select: { posts: { where: { status: "PUBLISHED" } } }
+          }
+        }
+      }),
+      prisma.setting.findMany({
+        select: { key: true, value: true }
+      }),
+    ]);
+
+    // 2. Fetch posts (larger queries) - limit fields with select
+    const postSelect = {
+      id: true,
+      title: true,
+      slug: true,
+      excerpt: true,
+      coverImage: true,
+      type: true,
+      status: true,
+      featured: true,
+      views: true,
+      readingTime: true,
+      publishedAt: true,
+      category: { select: { name: true, slug: true } },
+      author: { select: { name: true } }
+    };
+
+    [featured, latest] = await Promise.all([
       prisma.post.findMany({
         where: { status: "PUBLISHED", featured: true },
         orderBy: { publishedAt: "desc" },
         take: 3,
-        select: { id: true, title: true, slug: true, excerpt: true, coverImage: true, type: true, status: true, featured: true, views: true, readingTime: true, publishedAt: true, createdAt: true, category: { select: { name: true, slug: true } }, author: { select: { name: true } } },
+        select: postSelect,
       }),
       prisma.post.findMany({
         where: { status: "PUBLISHED" },
         orderBy: { publishedAt: "desc" },
         take: 9,
-        select: { id: true, title: true, slug: true, excerpt: true, coverImage: true, type: true, status: true, featured: true, views: true, readingTime: true, publishedAt: true, createdAt: true, category: { select: { name: true, slug: true } }, author: { select: { name: true } } },
+        select: postSelect,
       }),
-      prisma.category.findMany({
-        orderBy: { name: "asc" },
-        take: 10,
-        include: { _count: { select: { posts: { where: { status: "PUBLISHED" } } } } },
-      }),
-      prisma.setting.findMany(),
     ]);
   } catch (error) {
     console.error("Home page data error", error);
+    errorOccurred = true;
   }
 
   const settingsMap: Record<string, string> = {};
   for (const s of settings) settingsMap[s.key] = s.value;
 
   const heroPost = featured[0] || latest[0];
-
-  // type sections from the already fetched latest posts to reduce database load
   const articles = latest.filter((p) => p.type === "ARTICLE").slice(0, 3);
   const stories = latest.filter((p) => p.type === "STORY").slice(0, 3);
 
   return (
     <>
       <SiteHeader />
+
+      {errorOccurred && (
+        <div className="bg-amber-50 border-b border-amber-200 py-2 text-center text-sm text-amber-800">
+          نواجه ضغطاً كبيراً حالياً، قد لا تظهر بعض البيانات بشكل كامل.
+        </div>
+      )}
 
       {/* HERO */}
       <section className="relative pt-12 pb-20 overflow-hidden">
@@ -110,30 +147,32 @@ export default async function HomePage() {
           {latest.map((p) => (
             <PostCard key={p.id} post={{ ...p, publishedAt: p.publishedAt as any, category: p.category }} />
           ))}
-          {latest.length === 0 ? (
+          {latest.length === 0 && !errorOccurred ? (
             <div className="col-span-full text-center text-ink-500 py-20">لا توجد منشورات بعد.</div>
           ) : null}
         </div>
       </section>
 
       {/* CATEGORIES */}
-      <section className="container-px max-w-7xl mx-auto py-20">
-        <h2 className="heading-sec mb-10">التصنيفات</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {categories.map((c, idx) => (
-            <Link
-              key={c.id}
-              href={`/categories/${c.slug}`}
-              className="group relative rounded-2xl bg-cream-50 border border-ink-900/5 p-6 transition-all duration-500 hover:border-gold-500 hover:shadow-lg hover:-translate-y-1"
-              data-testid={`category-card-${c.slug}`}
-            >
-              <div className="text-3xl font-amiri text-gold-700 mb-2">{String(idx + 1).padStart(2, "0")}</div>
-              <div className="font-cairo font-bold text-ink-900 group-hover:text-gold-700 transition-colors">{c.name}</div>
-              <div className="text-xs text-ink-500 mt-1">{c._count.posts} منشور</div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {categories.length > 0 && (
+        <section className="container-px max-w-7xl mx-auto py-20">
+          <h2 className="heading-sec mb-10">التصنيفات</h2>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {categories.map((c, idx) => (
+              <Link
+                key={c.id}
+                href={`/categories/${c.slug}`}
+                className="group relative rounded-2xl bg-cream-50 border border-ink-900/5 p-6 transition-all duration-500 hover:border-gold-500 hover:shadow-lg hover:-translate-y-1"
+                data-testid={`category-card-${c.slug}`}
+              >
+                <div className="text-3xl font-amiri text-gold-700 mb-2">{String(idx + 1).padStart(2, "0")}</div>
+                <div className="font-cairo font-bold text-ink-900 group-hover:text-gold-700 transition-colors">{c.name}</div>
+                <div className="text-xs text-ink-500 mt-1">{c._count.posts} منشور</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* MIXED CONTENT */}
       {(articles.length > 0 || stories.length > 0) ? (
