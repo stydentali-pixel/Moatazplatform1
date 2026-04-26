@@ -23,6 +23,7 @@ export default async function TagPage({ params }: { params: { slug: string } }) 
           tagId: tag.id,
           post: { status: "PUBLISHED" }
         },
+        take: 24, // Safety limit
         select: {
           post: {
             select: {
@@ -33,12 +34,10 @@ export default async function TagPage({ params }: { params: { slug: string } }) 
               coverImage: true,
               type: true,
               status: true,
-              featured: true,
-              views: true,
-              readingTime: true,
               publishedAt: true,
-              category: { select: { name: true, slug: true } },
-              author: { select: { name: true } }
+              readingTime: true,
+              category: { select: { id: true, name: true, slug: true } },
+              author: { select: { id: true, name: true } }
             }
           },
         },

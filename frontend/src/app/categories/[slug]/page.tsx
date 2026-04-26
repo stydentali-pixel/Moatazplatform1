@@ -21,6 +21,7 @@ export default async function CategoryPage({ params }: { params: { slug: string 
       posts = await prisma.post.findMany({
         where: { status: "PUBLISHED", categoryId: cat.id },
         orderBy: { publishedAt: "desc" },
+        take: 24, // Safety limit for category pages
         select: {
           id: true,
           title: true,
@@ -29,12 +30,10 @@ export default async function CategoryPage({ params }: { params: { slug: string 
           coverImage: true,
           type: true,
           status: true,
-          featured: true,
-          views: true,
-          readingTime: true,
           publishedAt: true,
-          category: { select: { name: true, slug: true } },
-          author: { select: { name: true } }
+          readingTime: true,
+          category: { select: { id: true, name: true, slug: true } },
+          author: { select: { id: true, name: true } }
         },
       });
     }

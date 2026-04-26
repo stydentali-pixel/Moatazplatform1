@@ -5,7 +5,6 @@ import PostCard from "@/components/PostCard";
 import NewsletterForm from "@/components/NewsletterForm";
 import { prisma } from "@/lib/prisma";
 
-// Use revalidate for better performance on homepage
 export const revalidate = 3600; // 1 hour
 
 export default async function HomePage() {
@@ -15,12 +14,27 @@ export default async function HomePage() {
   let settings: any[] = [];
   let errorOccurred = false;
 
+  // Strict selection of fields to keep the payload lightweight
+  const postSelect = {
+    id: true,
+    title: true,
+    slug: true,
+    excerpt: true,
+    coverImage: true,
+    type: true,
+    status: true,
+    publishedAt: true,
+    readingTime: true,
+    category: { select: { id: true, name: true, slug: true } },
+    author: { select: { id: true, name: true } }
+  };
+
   try {
-    // 1. Fetch settings and categories first (smaller queries)
+    // 1. Fetch settings and categories (limited)
     [categories, settings] = await Promise.all([
       prisma.category.findMany({
         orderBy: { name: "asc" },
-        take: 10,
+        take: 8, // Limit to 8 as requested
         select: {
           id: true,
           name: true,
@@ -35,34 +49,18 @@ export default async function HomePage() {
       }),
     ]);
 
-    // 2. Fetch posts (larger queries) - limit fields with select
-    const postSelect = {
-      id: true,
-      title: true,
-      slug: true,
-      excerpt: true,
-      coverImage: true,
-      type: true,
-      status: true,
-      featured: true,
-      views: true,
-      readingTime: true,
-      publishedAt: true,
-      category: { select: { name: true, slug: true } },
-      author: { select: { name: true } }
-    };
-
+    // 2. Fetch posts (limited numbers and fields)
     [featured, latest] = await Promise.all([
       prisma.post.findMany({
         where: { status: "PUBLISHED", featured: true },
         orderBy: { publishedAt: "desc" },
-        take: 3,
+        take: 4, // Limit to 4 as requested
         select: postSelect,
       }),
       prisma.post.findMany({
         where: { status: "PUBLISHED" },
         orderBy: { publishedAt: "desc" },
-        take: 9,
+        take: 8, // Limit to 8 as requested
         select: postSelect,
       }),
     ]);
@@ -75,8 +73,9 @@ export default async function HomePage() {
   for (const s of settings) settingsMap[s.key] = s.value;
 
   const heroPost = featured[0] || latest[0];
-  const articles = latest.filter((p) => p.type === "ARTICLE").slice(0, 3);
-  const stories = latest.filter((p) => p.type === "STORY").slice(0, 3);
+  // Sections limited to 4 items each from the already fetched latest posts
+  const articles = latest.filter((p) => p.type === "ARTICLE").slice(0, 4);
+  const stories = latest.filter((p) => p.type === "STORY").slice(0, 4);
 
   return (
     <>
@@ -129,7 +128,7 @@ export default async function HomePage() {
             <h2 className="heading-sec">المختار بعناية</h2>
             <Link href="/posts?sort=popular" className="text-sm text-ink-600 hover:text-gold-700">مزيد ←</Link>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {featured.map((p) => (
               <PostCard key={p.id} post={{ ...p, publishedAt: p.publishedAt as any, category: p.category }} />
             ))}
@@ -143,7 +142,7 @@ export default async function HomePage() {
           <h2 className="heading-sec">أحدث ما نُشر</h2>
           <Link href="/posts" className="text-sm text-ink-600 hover:text-gold-700">جميع المقالات ←</Link>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {latest.map((p) => (
             <PostCard key={p.id} post={{ ...p, publishedAt: p.publishedAt as any, category: p.category }} />
           ))}
@@ -157,7 +156,7 @@ export default async function HomePage() {
       {categories.length > 0 && (
         <section className="container-px max-w-7xl mx-auto py-20">
           <h2 className="heading-sec mb-10">التصنيفات</h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {categories.map((c, idx) => (
               <Link
                 key={c.id}

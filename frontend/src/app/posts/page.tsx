@@ -43,12 +43,10 @@ export default async function PostsPage({ searchParams }: { searchParams: Record
           coverImage: true,
           type: true,
           status: true,
-          featured: true,
-          views: true,
-          readingTime: true,
           publishedAt: true,
-          category: { select: { name: true, slug: true } },
-          author: { select: { name: true } }
+          readingTime: true,
+          category: { select: { id: true, name: true, slug: true } },
+          author: { select: { id: true, name: true } }
         },
       }),
       prisma.post.count({ where }),
