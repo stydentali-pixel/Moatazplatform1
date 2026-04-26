@@ -18,6 +18,7 @@ import {
   Globe,
   Menu,
   X,
+  Activity,
 } from "lucide-react";
 
 const NAV = [
@@ -29,6 +30,7 @@ const NAV = [
   { href: "/admin/media", label: "الوسائط", icon: Image },
   { href: "/admin/pages", label: "الصفحات", icon: FileEdit },
   { href: "/admin/ideas", label: "أفكار المقالات", icon: Lightbulb },
+  { href: "/admin/automation", label: "سجلات الأتمتة", icon: Activity },
   { href: "/admin/settings", label: "الإعدادات", icon: Settings },
 ];
 
