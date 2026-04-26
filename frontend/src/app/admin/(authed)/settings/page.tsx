@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 const FIELDS: Array<{ key: string; label: string; type?: string; placeholder?: string }> = [
   { key: "siteName", label: "اسم الموقع" },
   { key: "siteDescription", label: "وصف الموقع" },
-  { key: "logo", label: "رابط الشعار", placeholder: "https://..." },
+  { key: "logo", label: "رابط الشعار", placeholder: "/brand/logo.jpg أو https://..." },
+  { key: "authorAvatar", label: "صورة الكاتب/الأدمن", placeholder: "https://..." },
   { key: "primaryColor", label: "اللون الأساسي", placeholder: "#a26b1c" },
   { key: "email", label: "البريد الإلكتروني" },
   { key: "twitter", label: "رابط تويتر" },

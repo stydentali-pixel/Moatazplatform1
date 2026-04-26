@@ -7,9 +7,10 @@ const tajawal = Tajawal({ subsets: ["arabic", "latin"], variable: "--font-tajawa
 const amiri = Amiri({ subsets: ["arabic", "latin"], variable: "--font-amiri", weight: ["400", "700"], style: ["normal", "italic"] });
 
 export const metadata: Metadata = {
-  title: "معتز العلقمي — منصّة المحتوى العربي",
-  description: "مقالات وقصص ومحتوى عربي راقٍ من معتز العلقمي.",
-  openGraph: { type: "website", locale: "ar_AR", siteName: "معتز العلقمي" },
+  title: "منصة معتز — للمعرفة والإلهام",
+  description: "مقالات وقصص ومحتوى عربي راقٍ للمعرفة والإلهام.",
+  openGraph: { type: "website", locale: "ar_AR", siteName: "منصة معتز", images: ["/brand/logo.jpg"] },
+  icons: { icon: "/brand/icon-192.jpg", apple: "/brand/icon-192.jpg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

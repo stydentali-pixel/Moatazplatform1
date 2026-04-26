@@ -275,7 +275,7 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
 
               <label className="block">
                 <span className="block text-xs text-ink-500 mb-1">التصنيف</span>
-                <select value={data.categoryId} onChange={(e) => update("categoryId", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-category">
+                <select required value={data.categoryId} onChange={(e) => update("categoryId", e.target.value)} className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-category">
                   <option value="">اختر تصنيفاً...</option>
                   {cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>

@@ -2,6 +2,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { DEFAULT_ICON_URL } from "@/lib/content";
 
 function LoginForm() {
   const router = useRouter();
@@ -84,10 +85,10 @@ export default function AdminLogin() {
       <div className="bg-ink-900 text-cream-50 p-10 md:p-16 flex flex-col justify-between relative overflow-hidden">
         <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-gold-700/30 blur-3xl pointer-events-none" />
         <Link href="/" className="flex items-center gap-3 relative z-10" data-testid="login-logo-link">
-          <span className="w-10 h-10 rounded-full bg-gold-700 flex items-center justify-center">
-            <span className="text-cream-50 font-amiri text-xl leading-none">م</span>
+          <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-gold-300/30">
+            <img src={DEFAULT_ICON_URL} alt="منصة معتز" className="h-full w-full object-cover" />
           </span>
-          <div className="font-cairo font-bold text-lg">معتز العلقمي</div>
+          <div className="font-cairo font-bold text-lg">منصة معتز</div>
         </Link>
         <div className="relative z-10">
           <div className="font-amiri text-gold-300 text-2xl mb-3">"اكتب كأنّك تنحت."</div>

@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ok, fail, readJson } from "@/lib/api";
 import { readingTimeMinutes, uniquePostSlug } from "@/lib/slug";
+import { generateExcerpt, safeImageUrl } from "@/lib/content";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       include: {
         tags: { include: { tag: true } },
         category: true,
-        author: { select: { id: true, name: true } },
+        author: { select: { id: true, name: true, avatar: true } },
       },
     });
     if (!post) return fail("غير موجود", 404);
@@ -64,12 +65,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (d.title !== undefined) update.title = d.title;
     if (d.slug !== undefined && d.slug.trim()) update.slug = d.slug.trim();
     else if (d.title && d.title !== current.title) update.slug = await uniquePostSlug(d.title, current.id);
-    if (d.excerpt !== undefined) update.excerpt = d.excerpt;
+    if (d.excerpt !== undefined) update.excerpt = d.excerpt?.trim() || generateExcerpt(d.content ?? current.content, d.title ?? current.title);
     if (d.content !== undefined) {
       update.content = d.content;
       update.readingTime = readingTimeMinutes(d.content);
     }
-    if (d.coverImage !== undefined) update.coverImage = d.coverImage;
+    if (d.coverImage !== undefined) update.coverImage = safeImageUrl(d.coverImage) || null;
     if (d.type !== undefined) update.type = d.type;
     if (d.featured !== undefined) update.featured = d.featured;
     if (d.categoryId !== undefined) update.categoryId = d.categoryId;
@@ -77,8 +78,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (d.seoDescription !== undefined) update.seoDescription = d.seoDescription;
     if (d.canonicalUrl !== undefined) update.canonicalUrl = d.canonicalUrl;
     if (d.scheduledAt !== undefined) update.scheduledAt = d.scheduledAt ? new Date(d.scheduledAt) : null;
+    if (d.excerpt === undefined && (d.content !== undefined || d.title !== undefined) && !current.excerpt) {
+      update.excerpt = generateExcerpt(d.content ?? current.content, d.title ?? current.title);
+    }
+
     if (d.status !== undefined) {
       update.status = d.status;
+      if (d.status === "PUBLISHED" && !(d.categoryId ?? current.categoryId)) return fail("اختر التصنيف قبل النشر", 400);
       if (d.status === "PUBLISHED" && !current.publishedAt) update.publishedAt = new Date();
     }
 

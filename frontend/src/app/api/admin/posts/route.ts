@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ok, fail, readJson } from "@/lib/api";
 import { uniquePostSlug, readingTimeMinutes } from "@/lib/slug";
+import { generateExcerpt, safeImageUrl } from "@/lib/content";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,6 +85,9 @@ export async function POST(req: NextRequest) {
     const existing = await prisma.post.findUnique({ where: { slug } });
     if (existing) return fail("الرابط مستخدم بالفعل", 400);
 
+    if (d.status === "PUBLISHED" && !d.categoryId) return fail("اختر التصنيف قبل النشر", 400);
+    const finalExcerpt = d.excerpt?.trim() || generateExcerpt(d.content, d.title) || null;
+    const finalCover = safeImageUrl(d.coverImage) || null;
     const publishedAt = d.status === "PUBLISHED" ? new Date() : null;
     const scheduledAt = d.scheduledAt ? new Date(d.scheduledAt) : null;
 
@@ -91,15 +95,15 @@ export async function POST(req: NextRequest) {
       data: {
         title: d.title,
         slug,
-        excerpt: d.excerpt || null,
+        excerpt: finalExcerpt,
         content: d.content || "",
-        coverImage: d.coverImage || null,
+        coverImage: finalCover,
         type: d.type,
         status: d.status,
         featured: d.featured,
         readingTime: readingTimeMinutes(d.content || ""),
         seoTitle: d.seoTitle || d.title,
-        seoDescription: d.seoDescription || d.excerpt || null,
+        seoDescription: d.seoDescription || finalExcerpt || null,
         canonicalUrl: d.canonicalUrl || null,
         publishedAt,
         scheduledAt,

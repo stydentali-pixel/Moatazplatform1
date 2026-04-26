@@ -19,13 +19,14 @@ async function main() {
         name: "معتز العلقمي",
         role: "ADMIN",
         bio: "مؤسس المنصة، كاتب ومحرر للمحتوى الثقافي والتقني.",
+        avatar: "/brand/icon-192.jpg",
       },
     });
     console.log("✓ Created admin");
   } else {
     admin = await prisma.user.update({
       where: { email: adminEmail },
-      data: { passwordHash, role: "ADMIN" },
+      data: { passwordHash, role: "ADMIN", avatar: existing.avatar || "/brand/icon-192.jpg" },
     });
     console.log("✓ Updated admin password");
   }
@@ -60,11 +61,11 @@ async function main() {
 
   // Settings
   const settings: Array<{ key: string; value: string }> = [
-    { key: "siteName", value: "معتز العلقمي" },
+    { key: "siteName", value: "منصة معتز" },
     { key: "siteDescription", value: "منصة عربية فاخرة للمقالات والقصص والإلهام" },
-    { key: "logo", value: "" },
+    { key: "logo", value: "/brand/logo.jpg" },
     { key: "primaryColor", value: "#a26b1c" },
-    { key: "email", value: "hello@moataz.platform" },
+    { key: "email", value: "moataz775498320@gmail.com" },
     { key: "twitter", value: "https://twitter.com" },
     { key: "facebook", value: "https://facebook.com" },
     { key: "instagram", value: "https://instagram.com" },

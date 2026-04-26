@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { DEFAULT_ICON_URL } from "@/lib/content";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -64,8 +65,8 @@ export default function AdminShell({ user, children }: { user: AdminUser; childr
     <aside className="flex h-full w-72 max-w-[85vw] flex-col bg-ink-900 text-cream-50 shadow-2xl lg:shadow-none">
       <div className="flex items-center justify-between border-b border-cream-100/10 p-5 lg:p-6">
         <Link href="/" className="flex min-w-0 items-center gap-3" data-testid="admin-home-link">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold-700">
-            <span className="font-amiri text-xl leading-none text-cream-50">م</span>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-gold-300/30">
+            <img src={DEFAULT_ICON_URL} alt="منصة معتز" className="h-full w-full object-cover" />
           </span>
           <div className="min-w-0">
             <div className="truncate font-cairo font-bold">معتز العلقمي</div>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { safeImageUrl, stripHtml } from "@/lib/content";
+import { safeImageUrl, stripHtml, initials } from "@/lib/content";
 
 export type PostCardData = {
   id: string;
@@ -11,6 +11,7 @@ export type PostCardData = {
   publishedAt?: string | Date | null;
   readingTime?: number | null;
   category?: { name: string; slug: string } | null;
+  author?: { name?: string | null; avatar?: string | null } | null;
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -33,7 +34,18 @@ function Cover({ src, title, feature = false }: { src?: string | null; title: st
       className={`h-full w-full object-cover ${feature ? "transition-transform duration-700 group-hover:scale-105" : ""}`}
     />
   ) : (
-    <div className="h-full w-full bg-gradient-to-br from-cream-200 to-cream-100" />
+    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-cream-200 to-cream-100 text-xs text-ink-400">
+      منصة معتز
+    </div>
+  );
+}
+
+function AuthorAvatar({ author }: { author?: PostCardData["author"] }) {
+  const avatar = safeImageUrl(author?.avatar);
+  return (
+    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gold-700 text-[11px] font-bold text-cream-50 ring-1 ring-gold-700/20">
+      {avatar ? <img src={avatar} alt={author?.name || "الكاتب"} className="h-full w-full object-cover" loading="lazy" /> : initials(author?.name)}
+    </span>
   );
 }
 
@@ -55,6 +67,7 @@ export default function PostCard({ post, variant = "default" }: { post: PostCard
           <h3 className="font-cairo text-xl font-bold leading-snug text-ink-900 transition-colors group-hover:text-gold-700 md:text-2xl">{post.title}</h3>
           {excerpt ? <p className="mt-3 line-clamp-2 text-sm leading-7 text-ink-600">{excerpt}</p> : null}
           <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-ink-500">
+            {post.author ? <span className="flex items-center gap-2"><AuthorAvatar author={post.author} />{post.author.name}</span> : null}
             {date ? <span>{date}</span> : null}
             {post.readingTime ? <span>· {post.readingTime} د قراءة</span> : null}
           </div>
@@ -70,9 +83,12 @@ export default function PostCard({ post, variant = "default" }: { post: PostCard
           <Cover src={post.coverImage} title={post.title} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="mb-1 text-[11px] text-gold-700">{TYPE_LABELS[post.type] || post.type}</div>
+          <div className="mb-1 text-[11px] text-gold-700">{post.category?.name || TYPE_LABELS[post.type] || post.type}</div>
           <h3 className="line-clamp-2 font-cairo text-base font-bold leading-snug text-ink-900 transition-colors group-hover:text-gold-700">{post.title}</h3>
-          <div className="mt-2 text-xs text-ink-500">{date}</div>
+          <div className="mt-2 flex items-center gap-2 text-xs text-ink-500">
+            {post.author ? <AuthorAvatar author={post.author} /> : null}
+            <span>{date}</span>
+          </div>
         </div>
       </Link>
     );
@@ -91,6 +107,7 @@ export default function PostCard({ post, variant = "default" }: { post: PostCard
         <h3 className="line-clamp-2 font-cairo text-lg font-bold leading-snug text-ink-900 transition-colors group-hover:text-gold-700">{post.title}</h3>
         {excerpt ? <p className="mt-2 line-clamp-2 text-sm leading-7 text-ink-600">{excerpt}</p> : null}
         <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-ink-500">
+          {post.author ? <span className="flex items-center gap-2"><AuthorAvatar author={post.author} />{post.author.name}</span> : null}
           {date ? <span>{date}</span> : null}
           {post.readingTime ? <span>· {post.readingTime} د قراءة</span> : null}
         </div>
