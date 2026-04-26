@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { DEFAULT_ICON_URL } from "@/lib/content";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -10,7 +10,7 @@ import {
   Plus,
   FolderOpen,
   Tag,
-  Image,
+  Image as ImageIcon,
   FileEdit,
   Settings,
   Lightbulb,
@@ -27,7 +27,7 @@ const NAV = [
   { href: "/admin/posts/new", label: "إضافة مقال", icon: Plus },
   { href: "/admin/categories", label: "التصنيفات", icon: FolderOpen },
   { href: "/admin/tags", label: "الوسوم", icon: Tag },
-  { href: "/admin/media", label: "الوسائط", icon: Image },
+  { href: "/admin/media", label: "الوسائط", icon: ImageIcon },
   { href: "/admin/pages", label: "الصفحات", icon: FileEdit },
   { href: "/admin/ideas", label: "أفكار المقالات", icon: Lightbulb },
   { href: "/admin/automation", label: "سجلات الأتمتة", icon: Activity },
@@ -67,11 +67,17 @@ export default function AdminShell({ user, children }: { user: AdminUser; childr
     <aside className="flex h-full w-72 max-w-[85vw] flex-col bg-ink-900 text-cream-50 shadow-2xl lg:shadow-none">
       <div className="flex items-center justify-between border-b border-cream-100/10 p-5 lg:p-6">
         <Link href="/" className="flex min-w-0 items-center gap-3" data-testid="admin-home-link">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-gold-300/30">
-            <img src={DEFAULT_ICON_URL} alt="منصة معتز" className="h-full w-full object-cover" />
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white ring-2 ring-gold-500/30">
+            <Image 
+              src="/images/profile-bg.jpg" 
+              alt="منصة معتز" 
+              fill
+              className="object-cover object-top"
+              sizes="40px"
+            />
           </span>
           <div className="min-w-0">
-            <div className="truncate font-cairo font-bold">معتز العلقمي</div>
+            <div className="truncate font-cairo font-bold text-cream-50">معتز العلقمي</div>
             <div className="text-[11px] text-cream-100/60">لوحة الإدارة</div>
           </div>
         </Link>
@@ -93,8 +99,8 @@ export default function AdminShell({ user, children }: { user: AdminUser; childr
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-colors ${
-                active ? "bg-gold-700 text-cream-50" : "text-cream-100/80 hover:bg-cream-100/5 hover:text-cream-50"
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition-all ${
+                active ? "bg-gold-700 text-cream-50 shadow-lg shadow-gold-900/20" : "text-cream-100/80 hover:bg-cream-100/5 hover:text-cream-50"
               }`}
               data-testid={`admin-nav-${item.href.split("/").pop() || "dashboard"}`}
             >
@@ -106,15 +112,28 @@ export default function AdminShell({ user, children }: { user: AdminUser; childr
       </nav>
 
       <div className="space-y-2 border-t border-cream-100/10 p-4">
-        <Link href="/" target="_blank" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-cream-100/80 hover:bg-cream-100/5">
+        <Link href="/" target="_blank" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-cream-100/80 hover:bg-cream-100/5 transition-colors">
           <Globe size={18} />
           <span>عرض الموقع</span>
         </Link>
-        <div className="px-4 py-2 text-xs text-cream-100/60">
-          <div className="truncate font-bold text-cream-100">{user.name || "مدير الموقع"}</div>
-          <div className="truncate">{user.email}</div>
+        
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-gold-500/20">
+            <Image 
+              src="/images/profile-bg.jpg" 
+              alt={user.name || "مدير الموقع"} 
+              fill
+              className="object-cover object-top"
+              sizes="36px"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-xs font-bold text-cream-50">{user.name || "مدير الموقع"}</div>
+            <div className="truncate text-[10px] text-cream-100/60">{user.email}</div>
+          </div>
         </div>
-        <button onClick={logout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-red-300 hover:bg-red-500/10" data-testid="admin-logout-btn">
+
+        <button onClick={logout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-red-300 hover:bg-red-500/10 transition-colors" data-testid="admin-logout-btn">
           <LogOut size={18} />
           <span>تسجيل الخروج</span>
         </button>
@@ -152,9 +171,15 @@ export default function AdminShell({ user, children }: { user: AdminUser; childr
           <div className="font-cairo font-extrabold text-ink-900">معتز العلقمي</div>
           <div className="text-xs text-ink-500">لوحة التحكم</div>
         </div>
-        <Link href="/" className="rounded-xl border border-ink-900/10 bg-white/60 p-2 text-ink-900 shadow-sm" aria-label="عرض الموقع">
-          <Globe size={22} />
-        </Link>
+        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl border border-ink-900/10 shadow-sm">
+          <Image 
+            src="/images/profile-bg.jpg" 
+            alt="Profile" 
+            fill
+            className="object-cover object-top"
+            sizes="36px"
+          />
+        </div>
       </header>
 
       <main className="min-w-0 px-4 py-5 sm:px-6 lg:me-72 lg:px-8 lg:py-10 xl:px-12">
