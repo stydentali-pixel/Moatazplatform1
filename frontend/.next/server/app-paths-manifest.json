@@ -1,20 +1,7 @@
 {
-  "/admin/login/page": "app/admin/login/page.js",
-  "/api/auth/login/route": "app/api/auth/login/route.js",
-  "/api/admin/categories/route": "app/api/admin/categories/route.js",
-  "/api/admin/ideas/route": "app/api/admin/ideas/route.js",
-  "/api/admin/tags/route": "app/api/admin/tags/route.js",
-  "/api/admin/posts/route": "app/api/admin/posts/route.js",
-  "/api/admin/settings/route": "app/api/admin/settings/route.js",
-  "/api/admin/media/route": "app/api/admin/media/route.js",
   "/page": "app/page.js",
-  "/api/public/subscribe/route": "app/api/public/subscribe/route.js",
-  "/search/page": "app/search/page.js",
-  "/admin/(authed)/page": "app/admin/(authed)/page.js",
   "/admin/(authed)/categories/page": "app/admin/(authed)/categories/page.js",
-  "/admin/(authed)/ideas/page": "app/admin/(authed)/ideas/page.js",
   "/admin/(authed)/posts/new/page": "app/admin/(authed)/posts/new/page.js",
-  "/admin/(authed)/posts/[id]/page": "app/admin/(authed)/posts/[id]/page.js",
   "/admin/(authed)/settings/page": "app/admin/(authed)/settings/page.js",
   "/admin/(authed)/media/page": "app/admin/(authed)/media/page.js"
 }

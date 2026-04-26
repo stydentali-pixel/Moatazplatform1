@@ -1,25 +1,38 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import PostCard from "@/components/PostCard";
 
-export default function SearchClient() {
-  const [q, setQ] = useState("");
+function SearchInner() {
+  const sp = useSearchParams();
+  const initialQ = sp.get("q") || "";
+  const [q, setQ] = useState(initialQ);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!q.trim()) return;
+  async function runSearch(query: string) {
+    if (!query.trim()) return;
     setLoading(true);
     setSearched(true);
     try {
-      const r = await fetch(`/api/public/search?q=${encodeURIComponent(q)}`);
+      const r = await fetch(`/api/public/search?q=${encodeURIComponent(query)}`);
       const j = await r.json();
       setItems(j?.data?.items || []);
     } finally {
       setLoading(false);
     }
+  }
+
+  // auto-run when ?q= present on first mount
+  useEffect(() => {
+    if (initialQ) runSearch(initialQ);
+    // eslint-disable-next-line
+  }, []);
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    runSearch(q);
   }
 
   return (
@@ -45,5 +58,13 @@ export default function SearchClient() {
         </div>
       ) : null}
     </>
+  );
+}
+
+export default function SearchClient() {
+  return (
+    <Suspense fallback={<div className="text-ink-500">...</div>}>
+      <SearchInner />
+    </Suspense>
   );
 }
