@@ -24,6 +24,9 @@ export default async function SiteFooter() {
           <h4 className="mb-4 font-bold text-gold-300">روابط</h4>
           <ul className="space-y-2 text-sm text-cream-100/80">
             <li><Link href="/posts" className="hover:text-gold-300">المقالات</Link></li>
+            <li><Link href="/ai-assistant" className="hover:text-gold-300">مساعد AI</Link></li>
+            <li><Link href="/article-tools" className="hover:text-gold-300">أدوات المقالات</Link></li>
+            <li><Link href="/script-helper" className="hover:text-gold-300">مساعد السكربتات</Link></li>
             <li><Link href="/categories" className="hover:text-gold-300">التصنيفات</Link></li>
             <li><Link href="/tags" className="hover:text-gold-300">الوسوم</Link></li>
             <li><Link href="/about" className="hover:text-gold-300">من نحن</Link></li>

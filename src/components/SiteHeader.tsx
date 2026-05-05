@@ -22,6 +22,7 @@ export default async function SiteHeader() {
         <nav className="hidden items-center gap-7 text-[15px] md:flex">
           <Link href="/" className="text-ink-700 transition-colors hover:text-gold-700" data-testid="nav-home">الرئيسية</Link>
           <Link href="/posts" className="text-ink-700 transition-colors hover:text-gold-700" data-testid="nav-posts">المقالات</Link>
+          <Link href="/ai-assistant" className="text-ink-700 transition-colors hover:text-gold-700" data-testid="nav-ai">مساعد AI</Link>
           
           <div className="h-4 w-px bg-ink-900/10 mx-1" />
           <NavCategories />

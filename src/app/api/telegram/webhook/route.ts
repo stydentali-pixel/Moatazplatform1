@@ -44,6 +44,10 @@ function siteUrl() {
   return (process.env.NEXT_PUBLIC_SITE_URL || "https://moatazalalqami.online").replace(/\/$/, "");
 }
 
+function telegramWebAppUrl() {
+  return `${siteUrl()}/telegram-webapp`;
+}
+
 function cleanText(input = "") {
   return input.replace(/\s+/g, " ").trim();
 }
@@ -413,14 +417,38 @@ export async function POST(req: NextRequest) {
         chatId,
         `أهلاً بك في بوت إدارة منصة معتز 🚀\n\n` +
           `الأوامر:\n` +
+          `/ai - فتح مساعد الذكاء الاصطناعي داخل تليجرام\n` +
           `/publish_full - نشر مقال كامل خطوة بخطوة\n` +
           `/draft عنوان المقال - إنشاء مسودة\n` +
           `/ideas - عرض الأفكار\n` +
           `/approve ideaId - اعتماد فكرة\n` +
           `/reject ideaId - رفض فكرة\n` +
-          `/cancel - إلغاء العملية الحالية`
+          `/cancel - إلغاء العملية الحالية`,
+        {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "🤖 فتح مساعد AI", web_app: { url: telegramWebAppUrl() } }],
+              [{ text: "🌐 فتح أدوات الموقع", url: `${siteUrl()}/ai-assistant` }],
+            ],
+          },
+        }
       );
       return ok({ help: true });
+    }
+
+    if (text === "/ai") {
+      await sendMessage(chatId, "افتح مساعد الذكاء الاصطناعي من الزر التالي:", {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "🤖 مساعد البوت والموقع", web_app: { url: telegramWebAppUrl() } }],
+            [
+              { text: "📝 أدوات المقالات", url: `${siteUrl()}/article-tools` },
+              { text: "💻 مساعد السكربتات", url: `${siteUrl()}/script-helper` },
+            ],
+          ],
+        },
+      });
+      return ok({ ai: true });
     }
 
     if (text === "/publish_full") {
@@ -514,6 +542,6 @@ export async function GET() {
   return ok({
     configured: configured(),
     status: "telegram webhook ready",
-    commands: ["/start", "/help", "/publish_full", "/draft", "/ideas", "/approve", "/reject"],
+    commands: ["/start", "/help", "/ai", "/publish_full", "/draft", "/ideas", "/approve", "/reject"],
   });
 }
