@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { ok, fail } from "@/lib/api";
+import { ok } from "@/lib/api";
 import { uniquePostSlug, readingTimeMinutes } from "@/lib/slug";
 import { uploadFile } from "@/lib/storage";
 
@@ -479,6 +479,12 @@ export async function POST(req: NextRequest) {
 
     if (text.startsWith("/draft ")) {
       const title = text.replace("/draft ", "").trim();
+
+      if (!title) {
+        await sendMessage(chatId, "اكتب عنوان المسودة بعد الأمر. مثال:\n/draft عنوان المقال");
+        return ok({ emptyTitle: true });
+      }
+
       const admin = await prisma.user.findFirst({ where: { role: "ADMIN" }, select: { id: true } });
 
       if (!admin) {
@@ -514,7 +520,23 @@ export async function POST(req: NextRequest) {
 
     if (text.startsWith("/approve ")) {
       const id = text.replace("/approve ", "").trim();
-      await prisma.articleIdea.update({ where: { id }, data: { status: "APPROVED" } });
+
+      if (!id) {
+        await sendMessage(chatId, "أرسل رقم الفكرة بعد الأمر. مثال:\n/approve ideaId");
+        return ok({ missingId: true });
+      }
+
+      const result = await prisma.articleIdea.updateMany({
+        where: { id },
+        data: { status: "APPROVED" },
+      });
+
+      if (result.count === 0) {
+        await log("approve", "not_found", { id });
+        await sendMessage(chatId, "هذه الفكرة لم تعد موجودة أو تم حذفها.");
+        return ok({ missingIdea: true, id });
+      }
+
       await log("approve", "success", { id });
       await sendMessage(chatId, `تم اعتماد الفكرة ✅\n${id}`);
       return ok({ id });
@@ -522,7 +544,23 @@ export async function POST(req: NextRequest) {
 
     if (text.startsWith("/reject ")) {
       const id = text.replace("/reject ", "").trim();
-      await prisma.articleIdea.update({ where: { id }, data: { status: "REJECTED" } });
+
+      if (!id) {
+        await sendMessage(chatId, "أرسل رقم الفكرة بعد الأمر. مثال:\n/reject ideaId");
+        return ok({ missingId: true });
+      }
+
+      const result = await prisma.articleIdea.updateMany({
+        where: { id },
+        data: { status: "REJECTED" },
+      });
+
+      if (result.count === 0) {
+        await log("reject", "not_found", { id });
+        await sendMessage(chatId, "هذه الفكرة لم تعد موجودة أو تم حذفها.");
+        return ok({ missingIdea: true, id });
+      }
+
       await log("reject", "success", { id });
       await sendMessage(chatId, `تم رفض الفكرة.\n${id}`);
       return ok({ id });
@@ -532,9 +570,19 @@ export async function POST(req: NextRequest) {
     return ok({ unknown: true });
   } catch (error) {
     console.error("Telegram webhook error", error);
-    await log("telegram_error", "error", { text }, error instanceof Error ? error.message : "Unknown error");
+
+    await log(
+      "telegram_error",
+      "error",
+      { text },
+      error instanceof Error ? error.message : "Unknown error"
+    );
+
     await sendMessage(chatId, "حدث خطأ أثناء تنفيذ الأمر. حاول مرة أخرى.");
-    return fail("Telegram command failed", 500);
+
+    // مهم:
+    // لا نرجع 500 هنا حتى لا يعيد Telegram إرسال نفس الرسالة مرارًا.
+    return ok({ error: true });
   }
 }
 
