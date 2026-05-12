@@ -10,6 +10,9 @@ export const postCardSelect = {
   slug: true,
   excerpt: true,
   coverImage: true,
+  guestAuthorName: true,
+  guestAuthorAvatar: true,
+  guestAuthorBio: true,
   type: true,
   status: true,
   publishedAt: true,
@@ -97,4 +100,13 @@ export function truncateHtml(html: string, maxChars = 80000): string {
 export function initials(name?: string | null): string {
   const clean = (name || "معتز").trim();
   return clean.slice(0, 1) || "م";
+}
+
+
+export function displayAuthor<T extends { guestAuthorName?: string | null; guestAuthorAvatar?: string | null; guestAuthorBio?: string | null; author?: { name?: string | null; avatar?: string | null; bio?: string | null } | null }>(post: T) {
+  return {
+    name: post.guestAuthorName?.trim() || post.author?.name || "معتز العلقمي",
+    avatar: safeImageUrl(post.guestAuthorAvatar) || safeImageUrl(post.author?.avatar) || null,
+    bio: post.guestAuthorBio?.trim() || post.author?.bio || null,
+  };
 }

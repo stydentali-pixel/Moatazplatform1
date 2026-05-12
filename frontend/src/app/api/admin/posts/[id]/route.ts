@@ -16,6 +16,9 @@ const PatchSchema = z.object({
   excerpt: z.string().optional().nullable(),
   content: z.string().optional(),
   coverImage: z.string().optional().nullable(),
+  guestAuthorName: z.string().optional().nullable(),
+  guestAuthorAvatar: z.string().optional().nullable(),
+  guestAuthorBio: z.string().optional().nullable(),
   type: z.enum(["ARTICLE", "STORY", "LINK", "IMAGE", "VIDEO", "QUOTE"]).optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "SCHEDULED", "ARCHIVED"]).optional(),
   featured: z.boolean().optional(),
@@ -61,6 +64,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const current = await prisma.post.findUnique({ where: { id: params.id } });
     if (!current) return fail("غير موجود", 404);
 
+    const officialSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://moatazalalqami.online";
     const update: any = {};
     if (d.title !== undefined) update.title = d.title;
     
@@ -82,6 +86,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       update.readingTime = readingTimeMinutes(d.content);
     }
     if (d.coverImage !== undefined) update.coverImage = safeImageUrl(d.coverImage) || null;
+    if (d.guestAuthorName !== undefined) update.guestAuthorName = d.guestAuthorName?.trim() || null;
+    if (d.guestAuthorAvatar !== undefined) update.guestAuthorAvatar = safeImageUrl(d.guestAuthorAvatar) || null;
+    if (d.guestAuthorBio !== undefined) update.guestAuthorBio = d.guestAuthorBio?.trim() || null;
     if (d.type !== undefined) update.type = d.type;
     if (d.featured !== undefined) update.featured = d.featured;
     if (d.categoryId !== undefined) update.categoryId = d.categoryId;
@@ -99,6 +106,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       if (d.status === "PUBLISHED") {
         if (!(d.categoryId ?? current.categoryId)) return fail("اختر التصنيف قبل النشر", 400);
         if (!current.publishedAt) update.publishedAt = new Date();
+        if (!d.canonicalUrl && !current.canonicalUrl) update.canonicalUrl = `${officialSiteUrl}/posts/${update.slug || current.slug}`;
       }
     }
 

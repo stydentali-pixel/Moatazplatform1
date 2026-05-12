@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ok, fail } from "@/lib/api";
-import { postCardSelect, sanitizePostCards, safeImageUrl, truncateHtml } from "@/lib/content";
+import { postCardSelect, sanitizePostCards, safeImageUrl, truncateHtml, displayAuthor } from "@/lib/content";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,6 +17,9 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
         excerpt: true,
         content: true,
         coverImage: true,
+        guestAuthorName: true,
+        guestAuthorAvatar: true,
+        guestAuthorBio: true,
         type: true,
         publishedAt: true,
         readingTime: true,
@@ -43,6 +46,7 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
         coverImage: safeImageUrl(post.coverImage),
         content: truncateHtml(post.content),
         tags: post.tags.map((pt) => pt.tag),
+        displayAuthor: displayAuthor(post),
       },
       related,
     });

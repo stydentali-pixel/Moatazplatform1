@@ -7,6 +7,7 @@ const tajawal = Tajawal({ subsets: ["arabic", "latin"], variable: "--font-tajawa
 const amiri = Amiri({ subsets: ["arabic", "latin"], variable: "--font-amiri", weight: ["400", "700"], style: ["normal", "italic"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://moatazalalqami.online"),
   title: "منصة معتز — للمعرفة والإلهام",
   description: "مقالات وقصص ومحتوى عربي راقٍ للمعرفة والإلهام.",
   openGraph: { type: "website", locale: "ar_AR", siteName: "منصة معتز", images: ["/brand/logo.jpg"] },

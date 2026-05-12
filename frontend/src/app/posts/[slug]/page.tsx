@@ -4,7 +4,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import PostCard from "@/components/PostCard";
 import { prisma } from "@/lib/prisma";
-import { postCardSelect, sanitizePostCards, safeImageUrl, truncateHtml, initials, generateExcerpt } from "@/lib/content";
+import { postCardSelect, sanitizePostCards, safeImageUrl, truncateHtml, initials, generateExcerpt, displayAuthor } from "@/lib/content";
 import type { Metadata } from "next";
 
 export const revalidate = 300;
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   
   if (!post) return { title: "غير موجود" };
   
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://moatazalalqami.online";
   const title = post.seoTitle || post.title;
   const description = post.seoDescription || post.excerpt || (post.content ? generateExcerpt(post.content, post.title) : undefined);
   const image = safeImageUrl(post.coverImage);
@@ -65,6 +65,9 @@ export default async function PostPage({ params }: { params: { slug: string } })
         content: true,
         excerpt: true,
         coverImage: true,
+        guestAuthorName: true,
+        guestAuthorAvatar: true,
+        guestAuthorBio: true,
         publishedAt: true,
         readingTime: true,
         type: true,
@@ -92,8 +95,9 @@ export default async function PostPage({ params }: { params: { slug: string } })
 
   if (!post) notFound();
 
+  const author = displayAuthor(post);
   const date = post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" }) : "";
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://moatazalalqami.online";
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -101,7 +105,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
     description: post.excerpt || generateExcerpt(post.content, post.title) || undefined,
     image: safeImageUrl(post.coverImage) ? [safeImageUrl(post.coverImage)] : undefined,
     datePublished: post.publishedAt || undefined,
-    author: { "@type": "Person", name: post.author.name },
+    author: { "@type": "Person", name: author.name },
     mainEntityOfPage: siteUrl ? `${siteUrl}/posts/${post.slug}` : undefined,
   };
 
@@ -125,7 +129,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
           </h1>
           {(post.excerpt || generateExcerpt(post.content, post.title)) ? <p className="mt-5 text-lg text-ink-600 leading-9">{post.excerpt || generateExcerpt(post.content, post.title)}</p> : null}
           <div className="mt-6 flex items-center justify-center gap-4 text-sm text-ink-500">
-            <span>{post.author.name}</span>
+            <span>{author.name}</span>
             {date ? <><span>·</span><span>{date}</span></> : null}
             {post.readingTime ? <><span>·</span><span>{post.readingTime} د قراءة</span></> : null}
           </div>
@@ -155,11 +159,11 @@ export default async function PostPage({ params }: { params: { slug: string } })
         <div className="mt-14 p-6 rounded-2xl bg-cream-100 border border-ink-900/5">
           <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gold-700 text-cream-50 ring-1 ring-gold-700/20">
-              {safeImageUrl(post.author.avatar) ? <img src={safeImageUrl(post.author.avatar) || ""} alt={post.author.name} className="h-full w-full object-cover" loading="lazy" /> : <span className="font-amiri text-2xl">{initials(post.author.name)}</span>}
+              {safeImageUrl(author.avatar) ? <img src={safeImageUrl(author.avatar) || ""} alt={author.name} className="h-full w-full object-cover" loading="lazy" /> : <span className="font-amiri text-2xl">{initials(author.name)}</span>}
             </div>
             <div>
-              <div className="font-cairo font-bold text-ink-900">{post.author.name}</div>
-              {post.author.bio ? <p className="text-ink-600 mt-1 text-sm leading-7">{post.author.bio}</p> : null}
+              <div className="font-cairo font-bold text-ink-900">{author.name}</div>
+              {author.bio ? <p className="text-ink-600 mt-1 text-sm leading-7">{author.bio}</p> : null}
             </div>
           </div>
         </div>

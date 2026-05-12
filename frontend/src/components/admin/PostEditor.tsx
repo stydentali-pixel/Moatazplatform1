@@ -13,6 +13,9 @@ export interface PostFormData {
   excerpt: string;
   content: string;
   coverImage: string;
+  guestAuthorName: string;
+  guestAuthorAvatar: string;
+  guestAuthorBio: string;
   type: string;
   status: string;
   featured: boolean;
@@ -25,7 +28,7 @@ export interface PostFormData {
 }
 
 const empty: PostFormData = {
-  title: "", slug: "", excerpt: "", content: "", coverImage: "",
+  title: "", slug: "", excerpt: "", content: "", coverImage: "", guestAuthorName: "", guestAuthorAvatar: "", guestAuthorBio: "",
   type: "ARTICLE", status: "DRAFT", featured: false,
   categoryId: "", tagIds: [], seoTitle: "", seoDescription: "", canonicalUrl: "", scheduledAt: "",
 };
@@ -151,7 +154,7 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
       setSuccess(targetStatus === "PUBLISHED" ? "تم نشر المقال بنجاح" : "تم حفظ المسودة بنجاح");
       
       if (targetStatus === "PUBLISHED" || j.data.status === "PUBLISHED") {
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://moatazalalqami.online";
         setPublishedUrl(`${siteUrl}/posts/${j.data.slug}`);
       } else {
         setPublishedUrl(null);
@@ -258,6 +261,25 @@ export default function PostEditor({ initial, postId }: { initial?: Partial<Post
               className="mt-3 w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-gold-500"
               data-testid="editor-cover-url-input"
             />
+          </div>
+
+          <div className="card p-4 sm:p-6">
+            <h3 className="font-cairo font-bold text-ink-900 mb-3">كاتب المقالة اختياري</h3>
+            <p className="mb-4 text-xs leading-6 text-ink-500">استخدم هذه الحقول إذا كان المقال من كاتب ضيف. إن تُركت فارغة سيظهر كاتب الحساب المعتاد.</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="block text-xs text-ink-500 mb-1">اسم الكاتب</span>
+                <input value={data.guestAuthorName} onChange={(e) => update("guestAuthorName", e.target.value)} placeholder="مثال: د. أحمد..." className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-guest-author-name" />
+              </label>
+              <label className="block">
+                <span className="block text-xs text-ink-500 mb-1">رابط صورة الكاتب</span>
+                <input value={data.guestAuthorAvatar} onChange={(e) => update("guestAuthorAvatar", e.target.value)} placeholder="https://..." className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-guest-author-avatar" />
+              </label>
+            </div>
+            <label className="mt-4 block">
+              <span className="block text-xs text-ink-500 mb-1">نبذة قصيرة عن الكاتب</span>
+              <textarea rows={2} value={data.guestAuthorBio} onChange={(e) => update("guestAuthorBio", e.target.value)} placeholder="نبذة اختيارية تظهر أسفل المقال..." className="w-full bg-cream-50 border border-ink-900/10 rounded-xl px-4 py-2 text-sm" data-testid="editor-guest-author-bio" />
+            </label>
           </div>
 
           <div className="card p-4 sm:p-6 overflow-hidden">

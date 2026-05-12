@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { safeImageUrl, stripHtml, initials } from "@/lib/content";
+import { safeImageUrl, stripHtml, initials, displayAuthor } from "@/lib/content";
 
 export type PostCardData = {
   id: string;
@@ -7,6 +7,9 @@ export type PostCardData = {
   title: string;
   excerpt?: string | null;
   coverImage?: string | null;
+  guestAuthorName?: string | null;
+  guestAuthorAvatar?: string | null;
+  guestAuthorBio?: string | null;
   type: string;
   publishedAt?: string | Date | null;
   readingTime?: number | null;
@@ -52,6 +55,7 @@ function AuthorAvatar({ author }: { author?: PostCardData["author"] }) {
 export default function PostCard({ post, variant = "default" }: { post: PostCardData; variant?: "default" | "feature" | "compact" }) {
   const date = post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" }) : "";
   const excerpt = stripHtml(post.excerpt, 150);
+  const author = displayAuthor(post);
 
   if (variant === "feature") {
     return (
@@ -68,7 +72,7 @@ export default function PostCard({ post, variant = "default" }: { post: PostCard
           {excerpt ? <p className="mt-3 line-clamp-2 text-sm leading-7 text-ink-600">{excerpt}</p> : null}
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-ink-500">
             <div className="flex flex-wrap items-center gap-3">
-              {post.author ? <span className="flex items-center gap-2"><AuthorAvatar author={post.author} />{post.author.name}</span> : null}
+              <span className="flex items-center gap-2"><AuthorAvatar author={author} />{author.name}</span>
               {date ? <span>{date}</span> : null}
               {post.readingTime ? <span>· {post.readingTime} د قراءة</span> : null}
             </div>
@@ -89,7 +93,7 @@ export default function PostCard({ post, variant = "default" }: { post: PostCard
           <div className="mb-1 text-[11px] text-gold-700">{post.category?.name || TYPE_LABELS[post.type] || post.type}</div>
           <h3 className="line-clamp-2 font-cairo text-base font-bold leading-snug text-ink-900 transition-colors group-hover:text-gold-700">{post.title}</h3>
           <div className="mt-2 flex items-center gap-2 text-xs text-ink-500">
-            {post.author ? <AuthorAvatar author={post.author} /> : null}
+            <AuthorAvatar author={author} />
             <span>{date}</span>
           </div>
         </div>
@@ -111,7 +115,7 @@ export default function PostCard({ post, variant = "default" }: { post: PostCard
         {excerpt ? <p className="mt-2 line-clamp-2 text-sm leading-7 text-ink-600">{excerpt}</p> : null}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-ink-500">
           <div className="flex flex-wrap items-center gap-3">
-            {post.author ? <span className="flex items-center gap-2"><AuthorAvatar author={post.author} />{post.author.name}</span> : null}
+            <span className="flex items-center gap-2"><AuthorAvatar author={author} />{author.name}</span>
             {date ? <span>{date}</span> : null}
             {post.readingTime ? <span>· {post.readingTime} د قراءة</span> : null}
           </div>

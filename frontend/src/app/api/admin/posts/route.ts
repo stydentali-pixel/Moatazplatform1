@@ -16,6 +16,9 @@ const PostSchema = z.object({
   excerpt: z.string().optional().nullable(),
   content: z.string().optional().default(""),
   coverImage: z.string().optional().nullable(),
+  guestAuthorName: z.string().optional().nullable(),
+  guestAuthorAvatar: z.string().optional().nullable(),
+  guestAuthorBio: z.string().optional().nullable(),
   type: z.enum(["ARTICLE", "STORY", "LINK", "IMAGE", "VIDEO", "QUOTE"]).default("ARTICLE"),
   status: z.enum(["DRAFT", "PUBLISHED", "SCHEDULED", "ARCHIVED"]).default("DRAFT"),
   featured: z.boolean().default(false),
@@ -88,6 +91,7 @@ export async function POST(req: NextRequest) {
 
     const finalExcerpt = d.excerpt?.trim() || generateExcerpt(d.content, d.title) || null;
     const finalCover = safeImageUrl(d.coverImage) || null;
+    const officialSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://moatazalalqami.online";
     const publishedAt = d.status === "PUBLISHED" ? new Date() : null;
     const scheduledAt = d.scheduledAt ? new Date(d.scheduledAt) : null;
 
@@ -98,13 +102,16 @@ export async function POST(req: NextRequest) {
         excerpt: finalExcerpt,
         content: d.content || "",
         coverImage: finalCover,
+        guestAuthorName: d.guestAuthorName?.trim() || null,
+        guestAuthorAvatar: safeImageUrl(d.guestAuthorAvatar) || null,
+        guestAuthorBio: d.guestAuthorBio?.trim() || null,
         type: d.type,
         status: d.status,
         featured: d.featured,
         readingTime: readingTimeMinutes(d.content || ""),
         seoTitle: d.seoTitle || d.title,
         seoDescription: d.seoDescription || finalExcerpt || null,
-        canonicalUrl: d.canonicalUrl || null,
+        canonicalUrl: d.canonicalUrl || `${officialSiteUrl}/posts/${slug}`,
         publishedAt,
         scheduledAt,
         authorId: user.id,
